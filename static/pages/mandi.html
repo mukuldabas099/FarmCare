@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mandi Prices</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/nav.css">
+<style>
+  :root {
+    --green: #1a7a3c;
+    --green-light: #2ecc71;
+    --navy: #1a2530;
+    --amber: #b05e00;
+    --red: #c0392b;
+    --bg: #eaf3eb;
+    --border: #d9e6d9;
+    --gray2: #3d5166;
+    --gray3: #5f7080;
+    --gray4: #8fa3b3;
+    --r: 18px;
+    --card-shadow: 0 4px 24px rgba(26,122,60,0.10), 0 1.5px 6px rgba(0,0,0,0.05);
+    --card-hover-shadow: 0 8px 36px rgba(26,122,60,0.16), 0 2px 10px rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eaf3eb;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 75% 55% at 8% 18%, rgba(46,204,113,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 78%, rgba(26,122,60,0.09) 0%, transparent 55%),
+      linear-gradient(150deg, #e8f5ec 0%, #f0f9f2 45%, #e4f0e6 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .leaves-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .leaf { position: absolute; opacity: 0.07; animation: floatLeaf linear infinite; will-change: transform; }
+  .leaf:nth-child(1) { left: 4%;  top: 15%; font-size: 1.8rem; animation-duration: 20s; animation-delay: 0s; }
+  .leaf:nth-child(2) { left: 20%; top: 70%; font-size: 1.4rem; animation-duration: 24s; animation-delay: -7s; }
+  .leaf:nth-child(3) { left: 45%; top: 25%; font-size: 1.9rem; animation-duration: 22s; animation-delay: -11s; }
+  .leaf:nth-child(4) { left: 70%; top: 12%; font-size: 1.1rem; animation-duration: 27s; animation-delay: -4s; }
+  .leaf:nth-child(5) { left: 82%; top: 65%; font-size: 2.1rem; animation-duration: 19s; animation-delay: -14s; }
+  .leaf:nth-child(6) { left: 93%; top: 85%; font-size: 1.3rem; animation-duration: 23s; animation-delay: -9s; }
+  @keyframes floatLeaf {
+    0%   { transform: translateY(0px) rotate(0deg); }
+    33%  { transform: translateY(-18px) rotate(8deg); }
+    66%  { transform: translateY(-8px) rotate(-5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  /* ── Layout ── */
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 24px 52px;
+  }
+
+  /* ── Section title ── */
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: #1a4028;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sec-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #1a7a3c, #2ecc71);
+    color: #fff;
+    border-radius: 20px;
+    padding: 3px 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Panel ── */
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #1a7a3c, #2ecc71, #b8e08a);
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* ── Controls ── */
+  .mandi-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .mandi-ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+
+  .m-lbl {
+    font-size: 9px;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  /* styled select to match panel */
+  .sel {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--navy);
+    background: #f4f9f5;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 14px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fa3b3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .sel:focus { border-color: var(--green); }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #1a7a3c 0%, #1e9647 60%, #2ecc71 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    box-shadow: 0 3px 14px rgba(26,122,60,0.30);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(26,122,60,0.38); filter: brightness(1.05); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--green);
+    background: #fff;
+    border: 1.5px solid #a8d8b8;
+    border-radius: 12px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s, border-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(26,122,60,0.18); background: #f0faf3; border-color: var(--green); }
+  .btn-secondary:active { transform: translateY(0); }
+
+  .btn-danger {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--red);
+    background: #fff;
+    border: 1.5px solid #e8b4b0;
+    border-radius: 12px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s, border-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(192,57,43,0.18); background: #fdecea; border-color: var(--red); }
+  .btn-danger:active { transform: translateY(0); }
+
+  /* ── Loading spinner ── */
+  .mandi-loading {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0;
+    font-size: 11px;
+    color: var(--gray3);
+    font-weight: 500;
+  }
+  .mandi-loading.show { display: flex !important; }
+  .mandi-spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Notice pill ── */
+  .mandi-notice {
+    font-size: 10.5px;
+    color: var(--gray4);
+    background: #f4f8f4;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    line-height: 1.5;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .mandi-notice strong { color: var(--gray3); }
+
+  /* ── Error ── */
+  .mandi-error {
+    background: #fdecea;
+    border: 1px solid #f5c0bb;
+    border-radius: 14px;
+    padding: 10px 16px;
+    font-size: 11.5px;
+    color: var(--red);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+
+  /* ── Summary stat cards (same dstat style as datalog) ── */
+  .mandi-summary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 860px) { .mandi-summary { grid-template-columns: repeat(3, 1fr); } }
+
+  .dstat {
+    background: linear-gradient(135deg, #f4f9f5 0%, #edf7f0 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .dstat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2.5px;
+    background: linear-gradient(90deg, var(--green), var(--green-light));
+    border-radius: 14px 14px 0 0;
+  }
+  .dstat:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(26,122,60,0.14); border-color: rgba(26,122,60,0.3); }
+
+  .dlbl {
+    font-size: 9px;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .dval {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.1;
+  }
+  .dval.mom-up   { color: var(--green); }
+  .dval.mom-down { color: var(--red); }
+
+  /* ── Markets row ── */
+  .mandi-markets-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 700px) { .mandi-markets-row { grid-template-columns: 1fr; } }
+
+  .mandi-col {
+    background: linear-gradient(135deg, #f4f9f5 0%, #edf7f0 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .mandi-col::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2.5px;
+    background: linear-gradient(90deg, var(--green), var(--green-light));
+    border-radius: 14px 14px 0 0;
+  }
+
+  .m-section-hdr {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1a4028;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .market-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    transition: box-shadow 0.15s;
+  }
+  .market-item:hover { box-shadow: 0 2px 10px rgba(26,122,60,0.10); }
+  .mi-name { font-size: 11.5px; color: var(--gray2); font-weight: 600; flex: 1; }
+  .mi-price { font-size: 12.5px; font-weight: 700; }
+  .mi-price.sell { color: var(--green); }
+  .mi-price.buy  { color: var(--navy); }
+
+  /* ── Price table ── */
+  .table-panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px 24px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .table-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #1a7a3c, #2ecc71, #b8e08a);
+    border-radius: 20px 20px 0 0;
+  }
+  .table-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a4028;
+    margin-bottom: 14px;
+  }
+
+  .m-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .m-table th {
+    padding: 8px 10px;
+    background: linear-gradient(135deg, #f4f9f5, #edf7f0);
+    border: 1px solid var(--border);
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    font-size: 9.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .m-table td {
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    color: var(--gray2);
+    background: #fff;
+    white-space: nowrap;
+  }
+  .m-table tr:nth-child(even) td { background: #f7fbf8; }
+  .m-table tr:hover td { background: #edf7f0; }
+  .td-modal { font-weight: 700; color: var(--green) !important; }
+  .td-max   { color: var(--amber) !important; font-weight: 600; }
+  .td-min   { color: var(--navy) !important; font-weight: 600; }
+
+  /* ── Top crops grid ── */
+  .topcrop-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 700px) { .topcrop-grid { grid-template-columns: repeat(3, 1fr); } }
+  .tc-card {
+    background: linear-gradient(135deg, #f4f9f5 0%, #edf7f0 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+  }
+  .tc-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2.5px;
+    background: linear-gradient(90deg, var(--green), var(--green-light));
+    border-radius: 14px 14px 0 0;
+  }
+  .tc-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(26,122,60,0.14); border-color: rgba(26,122,60,0.3); }
+  .tc-rank { font-size: 9px; color: var(--gray4); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tc-name { font-weight: 700; font-size: 12.5px; color: var(--navy); margin-bottom: 5px; }
+  .tc-price { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: var(--green); }
+  .tc-sub   { font-size: 9px; color: var(--gray4); margin-top: 2px; }
+
+  /* ── Advisor ── */
+  .mandi-advisor {
+    background: linear-gradient(135deg, #f0faf3 0%, #e8f5ec 100%);
+    border: 1.5px solid #b8ddc4;
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .mandi-advisor::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2.5px;
+    background: linear-gradient(90deg, var(--green), var(--green-light));
+    border-radius: 14px 14px 0 0;
+  }
+  .advisor-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+  .advisor-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a4028;
+    margin-bottom: 6px;
+  }
+  .advisor-content { font-size: 11.5px; color: var(--gray2); line-height: 1.8; }
+  .adv-good { color: var(--green); }
+  .adv-warn { color: var(--amber); }
+  .adv-info { color: var(--navy); }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 16px 14px 40px; }
+    .mandi-summary { grid-template-columns: repeat(2, 1fr); }
+    .topcrop-grid  { grid-template-columns: repeat(2, 1fr); }
+    .sec-title { font-size: 1.05rem; }
+    .mandi-controls { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="leaves-bg" aria-hidden="true">
+  <span class="leaf">🌿</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌱</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌿</span>
+  <span class="leaf">🌱</span>
+</div>
+
+<div class="wrap">
+
+  <div class="sec-title">🏪 Mandi Price Intelligence <span class="sec-tag">AGMARKNET</span></div>
+
+  <div class="panel">
+    <div class="mandi-controls">
+      <div class="mandi-ctrl-group">
+        <label class="m-lbl">State</label>
+        <select class="sel" id="mandiState" style="min-width:155px;"><option value="">All India</option></select>
+      </div>
+      <div class="mandi-ctrl-group">
+        <label class="m-lbl">Crop / Commodity</label>
+        <select class="sel" id="mandiCommodity" style="min-width:155px;"><option value="">Select Crop</option></select>
+      </div>
+      <button class="btn-primary" onclick="fetchMandiData()">🔍 Get Prices</button>
+      <button class="btn-secondary" onclick="fetchTopCrops()">🏆 Top Paying Crops</button>
+    </div>
+
+    <div class="mandi-loading" id="mandiLoading">
+      <div class="mandi-spinner"></div>
+      <span>Fetching live mandi data from AGMARKNET…</span>
+    </div>
+
+    <div class="mandi-error" id="mandiError" style="display:none;"></div>
+
+    <div class="mandi-notice">
+      📡 Live data from <strong>AGMARKNET / data.gov.in</strong> — Ministry of Agriculture. Prices in <strong>₹/quintal</strong>. Updated daily.
+    </div>
+
+    <!-- Summary stat cards -->
+    <div class="mandi-summary" id="mandiSummary" style="display:none;">
+      <div class="dstat"><div class="dlbl">Avg Modal Price</div><div class="dval" id="msAvg">—</div></div>
+      <div class="dstat"><div class="dlbl">Min Price</div><div class="dval" id="msMin">—</div></div>
+      <div class="dstat"><div class="dlbl">Max Price</div><div class="dval" id="msMax">—</div></div>
+      <div class="dstat"><div class="dlbl">Markets</div><div class="dval" id="msMarkets">—</div></div>
+      <div class="dstat"><div class="dlbl">Month-over-Month</div><div class="dval" id="msMoM">—</div></div>
+    </div>
+
+    <!-- Best sell / buy -->
+    <div class="mandi-markets-row" id="mandiMarketsRow" style="display:none;">
+      <div class="mandi-col">
+        <div class="m-section-hdr">💰 Best Markets to Sell</div>
+        <div id="bestSellList"></div>
+      </div>
+      <div class="mandi-col">
+        <div class="m-section-hdr">🛒 Best Markets to Buy</div>
+        <div id="bestBuyList"></div>
+      </div>
+    </div>
+
+    <!-- Advisor -->
+    <div class="mandi-advisor" id="mandiAdvisor" style="display:none;">
+      <div class="advisor-icon">📋</div>
+      <div>
+        <div class="advisor-title">Price Advisor</div>
+        <div class="advisor-content" id="advisorText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Price table panel -->
+  <div class="table-panel" id="mandiTableBox" style="display:none;">
+    <div class="table-title">📊 Live Mandi Prices</div>
+    <div style="overflow-x:auto;">
+      <table class="m-table">
+        <thead><tr><th>Market</th><th>District</th><th>State</th><th>Min ₹</th><th>Max ₹</th><th>Modal ₹</th><th>Variety</th><th>Date</th></tr></thead>
+        <tbody id="mandiTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top crops panel -->
+  <div class="table-panel" id="mandiTopCropBox" style="display:none;">
+    <div class="table-title">🏆 Highest-Paying Crops in Your State</div>
+    <div class="topcrop-grid" id="topCropGrid"></div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+function getBase(){ try{return window.parent.FC.getBase();}catch(e){return 'http://192.168.182.10:5000';} }
+window.onSensorData = function(){};
+window.onLangChange = function(){};
+
+function mandiSetLoading(on){
+  const el=document.getElementById('mandiLoading');
+  if(on){el.classList.add('show');el.style.display='flex';}
+  else{el.classList.remove('show');el.style.display='none';}
+  document.getElementById('mandiError').style.display='none';
+}
+function mandiShowError(msg){
+  const el=document.getElementById('mandiError');el.textContent='⚠ '+msg;el.style.display='block';
+}
+
+async function initDropdowns(){
+  try{
+    const sr=await fetch(getBase()+'/mandi/states',{signal:AbortSignal.timeout(5000)});
+    if(sr.ok){const{states}=await sr.json();const sel=document.getElementById('mandiState');states.forEach(s=>{const o=document.createElement('option');o.value=o.textContent=s;sel.appendChild(o);});}
+    const cr=await fetch(getBase()+'/mandi/commodities',{signal:AbortSignal.timeout(5000)});
+    if(cr.ok){const{commodities}=await cr.json();const sel=document.getElementById('mandiCommodity');commodities.forEach(c=>{const o=document.createElement('option');o.value=o.textContent=c;sel.appendChild(o);});}
+  }catch(e){
+    ['Uttar Pradesh','Madhya Pradesh','Rajasthan','Punjab','Haryana','Maharashtra','Gujarat','Karnataka','Bihar','West Bengal'].forEach(s=>{const o=document.createElement('option');o.value=o.textContent=s;document.getElementById('mandiState').appendChild(o);});
+    ['Wheat','Rice','Maize','Cotton','Soybean','Groundnut','Mustard','Onion','Potato','Tomato','Arhar (Tur)','Chana'].forEach(c=>{const o=document.createElement('option');o.value=o.textContent=c;document.getElementById('mandiCommodity').appendChild(o);});
+  }
+}
+
+async function fetchMandiData(){
+  const commodity=document.getElementById('mandiCommodity').value;
+  const state=document.getElementById('mandiState').value;
+  if(!commodity){alert('Please select a crop first');return;}
+  mandiSetLoading(true);
+  ['mandiSummary','mandiMarketsRow','mandiTableBox','mandiAdvisor','mandiTopCropBox'].forEach(id=>{document.getElementById(id).style.display='none';});
+  try{
+    const[markRes,trendRes]=await Promise.all([
+      fetch(`${getBase()}/mandi/best_markets?commodity=${encodeURIComponent(commodity)}&state=${encodeURIComponent(state)}`,{signal:AbortSignal.timeout(15000)}),
+      fetch(`${getBase()}/mandi/monthly_trend?commodity=${encodeURIComponent(commodity)}&state=${encodeURIComponent(state)}`,{signal:AbortSignal.timeout(30000)}),
+    ]);
+    const markData=markRes.ok?await markRes.json():{};
+    const trendData=trendRes.ok?await trendRes.json():{};
+    if(markData.error) throw new Error(markData.error);
+    if(!markData.total_markets || markData.total_markets === 0) {
+      throw new Error(`No mandi data found for "${commodity}" in "${state||'India'}". Try a different state or commodity.`);
+    }
+    renderSummary(markData,trendData);renderMarkets(markData);renderAdvisor(markData,trendData,commodity);
+    fetchPriceTable(commodity,state);
+  }catch(e){mandiShowError(e.message);}
+  finally{mandiSetLoading(false);}
+}
+
+function renderSummary(m,t){
+  document.getElementById('msAvg').textContent    = m.overall_avg!=null?`₹${m.overall_avg.toLocaleString('en-IN')}`:'—';
+  document.getElementById('msMin').textContent    = m.overall_min!=null?`₹${m.overall_min.toLocaleString('en-IN')}`:'—';
+  document.getElementById('msMax').textContent    = m.overall_max!=null?`₹${m.overall_max.toLocaleString('en-IN')}`:'—';
+  document.getElementById('msMarkets').textContent= m.total_markets||'—';
+  const mom=t.mom_change_pct;
+  if(mom!=null){
+    const el=document.getElementById('msMoM');
+    el.textContent=`${mom>0?'+':''}${mom}%`;
+    el.className='dval'+(mom>0?' mom-up':mom<0?' mom-down':'');
+  }
+  document.getElementById('mandiSummary').style.display='grid';
+}
+
+function renderMarkets(m){
+  const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
+  const sellList=document.getElementById('bestSellList');sellList.innerHTML='';
+  const buyList=document.getElementById('bestBuyList');buyList.innerHTML='';
+  (m.best_sell||[]).forEach((mk,i)=>{sellList.innerHTML+=`<div class="market-item"><div class="mi-name">${medals[i]||''} ${mk.market}</div><div class="mi-price sell">₹${mk.avg_modal.toLocaleString('en-IN')}</div></div>`;});
+  (m.best_buy||[]).forEach((mk,i)=>{buyList.innerHTML+=`<div class="market-item"><div class="mi-name">${medals[i]||''} ${mk.market}</div><div class="mi-price buy">₹${mk.avg_modal.toLocaleString('en-IN')}</div></div>`;});
+  document.getElementById('mandiMarketsRow').style.display='grid';
+}
+
+async function fetchPriceTable(commodity,state){
+  try{
+    const res=await fetch(`${getBase()}/mandi/prices?commodity=${encodeURIComponent(commodity)}&state=${encodeURIComponent(state)}&limit=50`,{signal:AbortSignal.timeout(10000)});
+    if(!res.ok)return;
+    const data=await res.json();const tbody=document.getElementById('mandiTableBody');tbody.innerHTML='';
+    (data.records||[]).forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${r.market||'—'}</td><td>${r.district||'—'}</td><td>${r.state||'—'}</td><td class="td-min">₹${r.min_price?.toLocaleString('en-IN')||'—'}</td><td class="td-max">₹${r.max_price?.toLocaleString('en-IN')||'—'}</td><td class="td-modal">₹${r.modal_price?.toLocaleString('en-IN')||'—'}</td><td>${r.variety||'—'}</td><td>${r.arrival_date||'—'}</td>`;tbody.appendChild(tr);});
+    document.getElementById('mandiTableBox').style.display='block';
+  }catch(e){}
+}
+
+function renderAdvisor(m,t,commodity){
+  const bestSell=m.best_sell?.[0],bestBuy=m.best_buy?.[0];
+  const buyMonth=t.cheapest_month?.label,sellMonth=t.expensive_month?.label;
+  const spread=t.analysis?.price_spread_pct,mom=t.mom_change_pct;
+  let lines=[];
+  if(bestSell) lines.push(`<div class="adv-good">💰 To maximise revenue: sell at <strong>${bestSell.market}</strong> — avg ₹${bestSell.avg_modal?.toLocaleString('en-IN')}/quintal.</div>`);
+  if(bestBuy)  lines.push(`<div class="adv-info">🛒 Cheapest to buy: <strong>${bestBuy.market}</strong> — avg ₹${bestBuy.avg_modal?.toLocaleString('en-IN')}/quintal.</div>`);
+  if(buyMonth&&sellMonth&&buyMonth!==sellMonth) lines.push(`<div class="adv-info">📅 Buy in ${buyMonth}, Sell in ${sellMonth} — prices vary ${spread||'?'}% annually.</div>`);
+  if(mom!=null) lines.push(`<div class="${mom>5?'adv-good':mom<-5?'adv-warn':'adv-info'}">📈 Month-over-month: <strong>${mom>0?'+':''}${mom}%</strong> — prices are ${mom>2?'rising (good time to sell)':mom<-2?'falling (good time to buy)':'stable'}.</div>`);
+  document.getElementById('advisorText').innerHTML=lines.join('')||'<div>Insufficient data for recommendations.</div>';
+  document.getElementById('mandiAdvisor').style.display='flex';
+}
+
+async function fetchTopCrops(){
+  const state=document.getElementById('mandiState').value;
+  mandiSetLoading(true);document.getElementById('mandiTopCropBox').style.display='none';
+  try{
+    const res=await fetch(`${getBase()}/mandi/top_crops?state=${encodeURIComponent(state)}`,{signal:AbortSignal.timeout(30000)});
+    if(!res.ok) throw new Error('API error');
+    const data=await res.json();const crops=data.top_crops||[];
+    const grid=document.getElementById('topCropGrid');grid.innerHTML='';
+    const medals=['🥇','🥈','🥉'];
+    crops.forEach((c,i)=>{
+      const div=document.createElement('div');
+      div.className='tc-card';
+      div.onclick=()=>{document.getElementById('mandiCommodity').value=c.commodity;fetchMandiData();};
+      div.innerHTML=`<div class="tc-rank">#${i+1} ${medals[i]||''}</div><div class="tc-name">${c.commodity}</div><div class="tc-price">₹${c.avg_price?.toLocaleString('en-IN')}</div><div class="tc-sub">avg / quintal</div>`;
+      grid.appendChild(div);
+    });
+    document.getElementById('mandiTopCropBox').style.display='block';
+  }catch(e){mandiShowError(e.message);}
+  finally{mandiSetLoading(false);}
+}
+
+setTimeout(initDropdowns, 500);
+</script>
+</body>
+</html>

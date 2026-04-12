@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Fertilizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/nav.css">
+<style>
+  :root {
+    --green: #1a7a3c;
+    --green-light: #2ecc71;
+    --navy: #1a2530;
+    --amber: #b05e00;
+    --red: #c0392b;
+    --bg: #eaf3eb;
+    --border: #d9e6d9;
+    --gray2: #3d5166;
+    --gray3: #5f7080;
+    --gray4: #8fa3b3;
+    --r: 18px;
+    --card-shadow: 0 4px 24px rgba(26,122,60,0.10), 0 1.5px 6px rgba(0,0,0,0.05);
+    --card-hover-shadow: 0 8px 36px rgba(26,122,60,0.16), 0 2px 10px rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eaf3eb;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 75% 55% at 8% 18%, rgba(46,204,113,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 78%, rgba(26,122,60,0.09) 0%, transparent 55%),
+      linear-gradient(150deg, #e8f5ec 0%, #f0f9f2 45%, #e4f0e6 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .leaves-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .leaf {
+    position: absolute;
+    opacity: 0.07;
+    animation: floatLeaf linear infinite;
+    will-change: transform;
+  }
+  .leaf:nth-child(1)  { left: 4%;  top: 15%; font-size: 1.8rem; animation-duration: 20s; animation-delay: 0s; }
+  .leaf:nth-child(2)  { left: 20%; top: 70%; font-size: 1.4rem; animation-duration: 24s; animation-delay: -7s; }
+  .leaf:nth-child(3)  { left: 45%; top: 25%; font-size: 1.9rem; animation-duration: 22s; animation-delay: -11s; }
+  .leaf:nth-child(4)  { left: 70%; top: 12%; font-size: 1.1rem; animation-duration: 27s; animation-delay: -4s; }
+  .leaf:nth-child(5)  { left: 82%; top: 65%; font-size: 2.1rem; animation-duration: 19s; animation-delay: -14s; }
+  .leaf:nth-child(6)  { left: 93%; top: 85%; font-size: 1.3rem; animation-duration: 23s; animation-delay: -9s; }
+  @keyframes floatLeaf {
+    0%   { transform: translateY(0px) rotate(0deg); }
+    33%  { transform: translateY(-18px) rotate(8deg); }
+    66%  { transform: translateY(-8px) rotate(-5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 24px 52px;
+  }
+
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: #1a4028;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #1a7a3c, #2ecc71, #b8e08a);
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* Selectors */
+  .crop-sel-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .sel-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sel-label {
+    font-size: 9px;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .sel {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    color: var(--navy);
+    background: #f4f9f5;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 14px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 160px;
+  }
+  .sel:focus { border-color: var(--green); }
+
+  /* Meta line */
+  .fert-meta-line {
+    font-size: 11.5px;
+    color: var(--gray4);
+    background: #f4f8f4;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    display: inline-block;
+    margin-bottom: 18px;
+  }
+
+  /* Main fert card */
+  .fert-card {
+    background: linear-gradient(135deg, #f4f9f5 0%, #edf7f0 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .fert-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2.5px;
+    background: linear-gradient(90deg, var(--green), var(--green-light));
+    border-radius: 16px 16px 0 0;
+  }
+  .fert-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .fert-npk {
+    font-size: 11px;
+    color: var(--gray4);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 8px;
+  }
+  .fert-conf {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--green);
+    background: rgba(46,204,113,0.1);
+    border: 1px solid rgba(46,204,113,0.3);
+    border-radius: 20px;
+    padding: 2px 10px;
+    margin-bottom: 10px;
+  }
+  .fert-desc {
+    font-size: 12.5px;
+    color: var(--gray2);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .fert-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .fert-detail {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .fd-label {
+    font-size: 9px;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .fd-val {
+    font-size: 12px;
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  /* Alternatives */
+  .alt-section-title {
+    font-size: 9px;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin: 18px 0 10px;
+  }
+  .alt-ferts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .alt-fert {
+    background: linear-gradient(135deg, #f4f9f5 0%, #edf7f0 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .alt-fert::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--green), var(--green-light));
+    border-radius: 14px 14px 0 0;
+  }
+  .alt-fert:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(26,122,60,0.14);
+    border-color: rgba(26,122,60,0.3);
+  }
+  .af-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .af-npk {
+    font-size: 10px;
+    color: var(--gray4);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 6px;
+  }
+  .af-conf {
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* Loading overlay */
+  .loading-ov {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(4px);
+    border-radius: 20px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 10;
+  }
+  .loading-ov.show { display: flex; }
+  .spin {
+    width: 28px; height: 28px;
+    border: 3px solid rgba(26,122,60,0.15);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-ov p {
+    font-size: 12px;
+    color: var(--gray3);
+    font-weight: 500;
+  }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 16px 14px 40px; }
+    .sec-title { font-size: 1.05rem; }
+    .fert-detail-grid { grid-template-columns: 1fr; }
+    .alt-ferts { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="leaves-bg" aria-hidden="true">
+  <span class="leaf">🌿</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌱</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌿</span>
+  <span class="leaf">🌱</span>
+</div>
+
+<div class="wrap">
+  <div class="sec-title">🧪 Fertilizer Recommendation</div>
+  <div class="panel">
+    <div class="loading-ov" id="fertLoading"><div class="spin"></div><p>Analyzing…</p></div>
+
+    <div class="crop-sel-row">
+      <div class="sel-group">
+        <span class="sel-label">Crop</span>
+        <select class="sel" id="fertCropSel" onchange="fetchFertilizer()">
+          <option value="">— Select Crop —</option>
+          <option>Rice</option><option>Wheat</option><option>Maize</option><option>Cotton</option>
+          <option>Sugarcane</option><option>Soybean</option><option>Groundnut</option>
+          <option>Mustard</option><option>Pulses</option><option>Millets</option>
+          <option>Cabbage</option><option>Beans</option>
+        </select>
+      </div>
+      <div class="sel-group">
+        <span class="sel-label">Soil Type</span>
+        <select class="sel" id="fertSoilSel" onchange="fetchFertilizer()">
+          <option>Alluvial</option><option>Black</option><option>Clay</option>
+          <option>Red</option><option>Yellow</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="fertMeta" class="fert-meta-line">Select a crop to get fertilizer recommendation.</div>
+
+    <div id="fertResult" style="display:none;">
+      <div class="fert-card" id="fertMainCard"></div>
+      <div class="alt-section-title">✦ Alternative Fertilizers</div>
+      <div class="alt-ferts" id="fertAltCards"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let _latestData = null;
+function getBase(){ try{return window.parent.FC.getBase();}catch(e){return 'http://192.168.182.10:5000';} }
+window.onSensorData = function(data){ _latestData=data; };
+window.onLangChange = function(){};
+
+async function fetchFertilizer(){
+  const crop = document.getElementById('fertCropSel').value;
+  const soil = document.getElementById('fertSoilSel').value;
+  if(!crop) return;
+  document.getElementById('fertLoading').classList.add('show');
+  try{
+    const payload = {...(_latestData||{}), soil_type:soil, crop_type:crop};
+    const res = await fetch(getBase()+'/predict_fertilizer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(8000)});
+    if(!res.ok) throw new Error();
+    displayFert(await res.json(), soil, crop);
+  } catch(e){
+    document.getElementById('fertMeta').textContent='Fertilizer service unavailable.';
+  }
+  finally{ document.getElementById('fertLoading').classList.remove('show'); }
+}
+
+function displayFert(data, soil, crop){
+  document.getElementById('fertMeta').textContent = `Soil: ${data.soil_type||soil}  →  Crop: ${data.crop_type_mapped||crop}`;
+  const rec = data.recommended;
+  document.getElementById('fertMainCard').innerHTML = `
+    <div class="fert-name">🧪 ${rec.name}</div>
+    <div class="fert-npk">NPK Ratio: ${rec.npk}</div>
+    <div class="fert-conf">✓ ${rec.confidence}% Confidence</div>
+    <div class="fert-desc">${rec.description}</div>
+    <div class="fert-detail-grid">
+      <div class="fert-detail"><div class="fd-label">Application Rate</div><div class="fd-val">${rec.rate}</div></div>
+      <div class="fert-detail"><div class="fd-label">Timing</div><div class="fd-val">${rec.timing}</div></div>
+    </div>`;
+  const ac = document.getElementById('fertAltCards'); ac.innerHTML='';
+  (data.alternatives||[]).forEach(a=>{
+    const d=document.createElement('div'); d.className='alt-fert';
+    d.innerHTML=`<div class="af-name">🔬 ${a.name}</div><div class="af-npk">${a.npk}</div><div class="af-conf">✓ ${a.confidence}% confidence</div>`;
+    ac.appendChild(d);
+  });
+  document.getElementById('fertResult').style.display='block';
+}
+</script>
+</body>
+</html>

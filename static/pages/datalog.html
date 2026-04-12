@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Data Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/nav.css">
+<style>
+  :root {
+    --green: #1a7a3c;
+    --green-light: #2ecc71;
+    --navy: #1a2530;
+    --amber: #b05e00;
+    --red: #c0392b;
+    --bg: #eaf3eb;
+    --border: #d9e6d9;
+    --gray2: #3d5166;
+    --gray3: #5f7080;
+    --gray4: #8fa3b3;
+    --r: 18px;
+    --card-shadow: 0 4px 24px rgba(26,122,60,0.10), 0 1.5px 6px rgba(0,0,0,0.05);
+    --card-hover-shadow: 0 8px 36px rgba(26,122,60,0.16), 0 2px 10px rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eaf3eb;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ── Animated background ─────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 75% 55% at 8% 18%, rgba(46,204,113,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 78%, rgba(26,122,60,0.09) 0%, transparent 55%),
+      linear-gradient(150deg, #e8f5ec 0%, #f0f9f2 45%, #e4f0e6 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Floating leaves */
+  .leaves-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .leaf {
+    position: absolute;
+    opacity: 0.07;
+    animation: floatLeaf linear infinite;
+    will-change: transform;
+  }
+  .leaf:nth-child(1)  { left: 4%;  top: 15%; font-size: 1.8rem; animation-duration: 20s; animation-delay: 0s; }
+  .leaf:nth-child(2)  { left: 20%; top: 70%; font-size: 1.4rem; animation-duration: 24s; animation-delay: -7s; }
+  .leaf:nth-child(3)  { left: 45%; top: 25%; font-size: 1.9rem; animation-duration: 22s; animation-delay: -11s; }
+  .leaf:nth-child(4)  { left: 70%; top: 12%; font-size: 1.1rem; animation-duration: 27s; animation-delay: -4s; }
+  .leaf:nth-child(5)  { left: 82%; top: 65%; font-size: 2.1rem; animation-duration: 19s; animation-delay: -14s; }
+  .leaf:nth-child(6)  { left: 93%; top: 85%; font-size: 1.3rem; animation-duration: 23s; animation-delay: -9s; }
+  @keyframes floatLeaf {
+    0%   { transform: translateY(0px) rotate(0deg); }
+    33%  { transform: translateY(-18px) rotate(8deg); }
+    66%  { transform: translateY(-8px) rotate(-5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  /* ── Layout ──────────────────────────────────────────── */
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 24px 52px;
+  }
+
+  /* ── Section title ───────────────────────────────────── */
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: #1a4028;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Panel ───────────────────────────────────────────── */
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #1a7a3c, #2ecc71, #b8e08a);
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* ── Stat grid ───────────────────────────────────────── */
+  .datalog-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .dstat {
+    background: linear-gradient(135deg, #f4f9f5 0%, #edf7f0 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .dstat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2.5px;
+    background: linear-gradient(90deg, var(--green), var(--green-light));
+    border-radius: 14px 14px 0 0;
+  }
+  .dstat:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(26,122,60,0.14);
+    border-color: rgba(26,122,60,0.3);
+  }
+
+  .dlbl {
+    font-size: 9px;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .dval {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.1;
+  }
+  .dval.small {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 500;
+    padding-top: 2px;
+    line-height: 1.5;
+    color: var(--gray2);
+  }
+
+  /* ── Actions ─────────────────────────────────────────── */
+  .log-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #1a7a3c 0%, #1e9647 60%, #2ecc71 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    box-shadow: 0 3px 14px rgba(26,122,60,0.30);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(26,122,60,0.38);
+    filter: brightness(1.05);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* Danger button */
+  .btn-danger {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--red);
+    background: #fff;
+    border: 1.5px solid #e8b4b0;
+    border-radius: 12px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s, border-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(192,57,43,0.18);
+    background: #fdecea;
+    border-color: var(--red);
+  }
+  .btn-danger:active { transform: translateY(0); }
+
+  /* Note pill */
+  .log-note {
+    font-size: 10.5px;
+    color: var(--gray4);
+    background: #f4f8f4;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 750px) {
+    .datalog-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .wrap { padding: 16px 14px 40px; }
+    .datalog-stats { grid-template-columns: repeat(2, 1fr); }
+    .sec-title { font-size: 1.05rem; }
+    .log-actions { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Floating leaves -->
+<div class="leaves-bg" aria-hidden="true">
+  <span class="leaf">🌿</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌱</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌿</span>
+  <span class="leaf">🌱</span>
+</div>
+
+<div class="wrap">
+  <div class="sec-title">📊 Historical Data Log</div>
+  <div class="panel">
+    <div class="datalog-stats">
+      <div class="dstat"><div class="dlbl">Total Readings</div><div class="dval" id="dlTotal">—</div></div>
+      <div class="dstat"><div class="dlbl">Log Size</div><div class="dval" id="dlSize">—</div></div>
+      <div class="dstat"><div class="dlbl">First Reading</div><div class="dval small" id="dlFirst">—</div></div>
+      <div class="dstat"><div class="dlbl">Latest Reading</div><div class="dval small" id="dlLast">—</div></div>
+      <div class="dstat"><div class="dlbl">Avg Health</div><div class="dval" id="dlAvgScore">—</div></div>
+      <div class="dstat"><div class="dlbl">Avg Moisture</div><div class="dval" id="dlAvgMoist">—</div></div>
+      <div class="dstat"><div class="dlbl">Avg pH</div><div class="dval" id="dlAvgPh">—</div></div>
+      <div class="dstat"><div class="dlbl">Avg Temp</div><div class="dval" id="dlAvgTemp">—</div></div>
+    </div>
+    <div class="log-actions">
+      <button class="btn-primary" onclick="downloadLog()">⬇ Download CSV</button>
+      <button class="btn-danger"  onclick="clearLog()">🗑 Clear Log</button>
+      <span class="log-note">CSV opens in Excel / Google Sheets for full trend analysis</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function getBase(){ try{return window.parent.FC.getBase();}catch(e){return 'http://192.168.182.10:5000';} }
+window.onSensorData = function(){};
+window.onLangChange = function(){};
+
+async function updateLogStats(){
+  try{
+    const res = await fetch(getBase()+'/log_stats',{signal:AbortSignal.timeout(4000)});
+    if(!res.ok) return;
+    const s = await res.json();
+    document.getElementById('dlTotal').textContent = s.total_rows!=null ? s.total_rows.toLocaleString() : '0';
+    document.getElementById('dlSize').textContent  = s.log_size_kb!=null ? `${s.log_size_kb} KB` : '—';
+    const fmt = ts => ts ? ts.replace('T',' ').slice(0,16) : '—';
+    document.getElementById('dlFirst').textContent = fmt(s.first_reading);
+    document.getElementById('dlLast').textContent  = fmt(s.last_reading);
+    if(s.averages){
+      const a = s.averages;
+      document.getElementById('dlAvgScore').textContent = a.health_score!=null?`${a.health_score}%`:'—';
+      document.getElementById('dlAvgMoist').textContent = a.moisture!=null?`${a.moisture}%`:'—';
+      document.getElementById('dlAvgPh').textContent    = a.ph!=null?`${a.ph}`:'—';
+      document.getElementById('dlAvgTemp').textContent  = a.temperature!=null?`${a.temperature}°C`:'—';
+    }
+  } catch(e){}
+}
+
+async function downloadLog(){
+  try{
+    const res = await fetch(getBase()+'/download_log',{signal:AbortSignal.timeout(15000)});
+    if(!res.ok) throw new Error('No data');
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `FarmCare_DataLog_${Date.now()}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+  } catch(e){ alert('Download failed: '+e.message); }
+}
+
+async function clearLog(){
+  if(!confirm('Clear ALL logged data? This cannot be undone.')) return;
+  try{
+    const res = await fetch(getBase()+'/clear_log',{method:'POST',signal:AbortSignal.timeout(5000)});
+    if(!res.ok) throw new Error();
+    updateLogStats();
+    alert('Log cleared successfully.');
+  } catch(e){ alert('Clear failed: '+e.message); }
+}
+
+updateLogStats();
+setInterval(updateLogStats, 30000);
+</script>
+</body>
+</html>

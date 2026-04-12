@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Soil Health Card PDF</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/nav.css">
+<style>
+  :root {
+    --green: #1a7a3c;
+    --green-light: #2ecc71;
+    --navy: #1a2530;
+    --amber: #b05e00;
+    --red: #c0392b;
+    --bg: #eaf3eb;
+    --border: #d9e6d9;
+    --gray2: #3d5166;
+    --gray3: #5f7080;
+    --gray4: #8fa3b3;
+    --r: 18px;
+    --card-shadow: 0 4px 24px rgba(26,122,60,0.10), 0 1.5px 6px rgba(0,0,0,0.05);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eaf3eb;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 75% 55% at 8% 18%, rgba(46,204,113,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 78%, rgba(26,122,60,0.09) 0%, transparent 55%),
+      linear-gradient(150deg, #e8f5ec 0%, #f0f9f2 45%, #e4f0e6 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .leaves-bg {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .leaf {
+    position: absolute; opacity: 0.07;
+    animation: floatLeaf linear infinite; will-change: transform;
+  }
+  .leaf:nth-child(1)  { left: 4%;  top: 15%; font-size: 1.8rem; animation-duration: 20s; animation-delay: 0s; }
+  .leaf:nth-child(2)  { left: 20%; top: 70%; font-size: 1.4rem; animation-duration: 24s; animation-delay: -7s; }
+  .leaf:nth-child(3)  { left: 45%; top: 25%; font-size: 1.9rem; animation-duration: 22s; animation-delay: -11s; }
+  .leaf:nth-child(4)  { left: 70%; top: 12%; font-size: 1.1rem; animation-duration: 27s; animation-delay: -4s; }
+  .leaf:nth-child(5)  { left: 82%; top: 65%; font-size: 2.1rem; animation-duration: 19s; animation-delay: -14s; }
+  .leaf:nth-child(6)  { left: 93%; top: 85%; font-size: 1.3rem; animation-duration: 23s; animation-delay: -9s; }
+  @keyframes floatLeaf {
+    0%   { transform: translateY(0px) rotate(0deg); }
+    33%  { transform: translateY(-18px) rotate(8deg); }
+    66%  { transform: translateY(-8px) rotate(-5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 24px 52px;
+  }
+
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: #1a4028;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sec-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--green);
+    background: rgba(26,122,60,0.1);
+    border: 1px solid rgba(26,122,60,0.25);
+    border-radius: 20px;
+    padding: 2px 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #1a7a3c, #2ecc71, #b8e08a);
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* Info banner */
+  .pdf-info {
+    background: linear-gradient(135deg, rgba(26,122,60,0.06) 0%, rgba(46,204,113,0.06) 100%);
+    border: 1px solid rgba(26,122,60,0.18);
+    border-left: 3px solid var(--green);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #1a5c2e;
+    margin-bottom: 22px;
+    line-height: 1.7;
+    font-weight: 500;
+  }
+
+  /* Form grid */
+  .fgrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  @media(max-width:600px){ .fgrid { grid-template-columns: 1fr; } }
+
+  .fg {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .fg label {
+    font-size: 9px;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  .inp {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    color: var(--navy);
+    background: #f4f9f5;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+  .inp:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(26,122,60,0.08);
+  }
+  .inp[type="file"] {
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+
+  .sel {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    color: var(--navy);
+    background: #f4f9f5;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .sel:focus { border-color: var(--green); }
+
+  /* Generate button */
+  .gen-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #1a7a3c 0%, #1e9647 60%, #2ecc71 100%);
+    border: none;
+    border-radius: 14px;
+    padding: 14px 28px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    box-shadow: 0 4px 18px rgba(26,122,60,0.32);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .gen-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(26,122,60,0.40);
+    filter: brightness(1.05);
+  }
+  .gen-btn:active { transform: translateY(0); }
+  .gen-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 16px 14px 40px; }
+    .sec-title { font-size: 1.05rem; }
+    .panel { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="leaves-bg" aria-hidden="true">
+  <span class="leaf">🌿</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌱</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌿</span>
+  <span class="leaf">🌱</span>
+</div>
+
+<div class="wrap">
+  <div class="sec-title">📄 Generate Soil Health Card <span class="sec-tag">PDF</span></div>
+  <div class="panel">
+    <div class="pdf-info">
+      📋 Fill your farm details below. Sensor readings, soil analysis, crop optimization and 10-day weather forecast will be automatically included in the PDF.
+    </div>
+
+    <div class="fgrid">
+      <div class="fg"><label>Farmer Name</label><input class="inp" type="text" id="fname" placeholder="e.g. Rajesh Kumar"></div>
+      <div class="fg"><label>Email</label><input class="inp" type="email" id="femail" placeholder="farmer@example.com"></div>
+      <div class="fg"><label>Address / Village</label><input class="inp" type="text" id="faddr" placeholder="Village, District, State"></div>
+      <div class="fg"><label>GPS Location (Lat Lon)</label><input class="inp" type="text" id="floc" placeholder="28.6139 77.2090"></div>
+      <div class="fg"><label>Khasra Number</label><input class="inp" type="text" id="fkhasra" placeholder="e.g. 142/3"></div>
+      <div class="fg"><label>Farm Size (sqft)</label><input class="inp" type="text" id="fsize" placeholder="e.g. 5000"></div>
+      <div class="fg">
+        <label>Crop Type</label>
+        <select class="sel" id="pdfCropSel">
+          <option value="">— Select Crop —</option>
+          <option>Rice</option><option>Wheat</option><option>Maize</option><option>Cotton</option>
+          <option>Sugarcane</option><option>Soybean</option><option>Groundnut</option>
+          <option>Mustard</option><option>Pulses</option><option>Millets</option>
+          <option>Cabbage</option><option>Beans</option>
+        </select>
+      </div>
+      <div class="fg"><label>Soil Image (optional)</label><input class="inp" type="file" id="pdfSoilImg" accept="image/*"></div>
+    </div>
+
+    <button class="gen-btn" id="genBtn" onclick="genPDF()">
+      <div class="spinner" id="spin"></div>
+      <span id="btnTxt">⚡ Generate Soil Health Card</span>
+    </button>
+  </div>
+</div>
+
+<script>
+let _sensorData = null;
+let _lang = 'en';
+
+function getBase(){ try{return window.parent.FC.getBase();}catch(e){return 'http://192.168.182.10:5000';} }
+window.onSensorData = function(data){ _sensorData = data; };
+window.onLangChange = function(lang){ _lang = lang; };
+
+async function genPDF(){
+  if(!_sensorData){ alert('No sensor data! Connect to Pi or use Demo Mode first.'); return; }
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('spin').style.display = 'block';
+  document.getElementById('btnTxt').textContent = 'Generating…';
+  try{
+    const fd = new FormData();
+    fd.append('farmer_name', document.getElementById('fname').value.trim()   || 'N/A');
+    fd.append('email',       document.getElementById('femail').value.trim()  || 'N/A');
+    fd.append('address',     document.getElementById('faddr').value.trim()   || 'N/A');
+    fd.append('location',    document.getElementById('floc').value.trim()    || 'N/A');
+    fd.append('khasra_number',document.getElementById('fkhasra').value.trim()|| 'N/A');
+    fd.append('farm_size',   document.getElementById('fsize').value.trim()   || 'N/A');
+    fd.append('crop_type',   document.getElementById('pdfCropSel').value     || 'Rice');
+    fd.append('lang',        _lang);
+    fd.append('sensor_data', JSON.stringify(_sensorData));
+    const imgFile = document.getElementById('pdfSoilImg').files[0];
+    if(imgFile) fd.append('soil_image', imgFile);
+
+    const res = await fetch(getBase()+'/generate_pdf',{method:'POST',body:fd,signal:AbortSignal.timeout(45000)});
+    if(!res.ok){
+      const e = await res.json().catch(()=>({error:'Server error'}));
+      throw new Error(e.error||'Server error');
+    }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `SoilHealthCard_${document.getElementById('fname').value||'Farmer'}_${Date.now()}.pdf`;
+    a.click(); URL.revokeObjectURL(a.href);
+  } catch(e){
+    alert('PDF generation failed: '+e.message);
+  } finally{
+    btn.disabled = false;
+    document.getElementById('spin').style.display = 'none';
+    document.getElementById('btnTxt').textContent = '⚡ Generate Soil Health Card';
+  }
+}
+</script>
+</body>
+</html>

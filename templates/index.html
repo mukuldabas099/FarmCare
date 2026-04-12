@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FarmCare – Smart Farming Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --soil:#2C1A0E; --earth:#5C3D1E; --moss:#1B4332; --leaf:#2D6A4F;
+  --sprout:#40916C; --lime:#74C69D; --mist:#D8F3DC; --cream:#FDF8F0;
+  --wheat:#F4E4C1; --saffron:#E07B00; --ochre:#C9862A; --sky:#1A3F8A;
+  --fog:#6B7C8D; --smoke:#ECF0F3; --white:#FFFFFF; --red:#C0392B;
+  --amber:#b05e00; --amber-mid:#e07b00;
+  --font-h:'Playfair Display',Georgia,serif;
+  --font-b:'DM Sans','Noto Sans Devanagari',sans-serif;
+  --r:8px; --r2:14px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--cream);color:var(--soil);overflow-x:hidden;}
+.hidden{display:none!important;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--smoke);}
+::-webkit-scrollbar-thumb{background:var(--sprout);border-radius:3px;}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:28px;right:28px;z-index:9999;background:var(--moss);color:#fff;padding:12px 20px;border-radius:var(--r);font-size:13px;box-shadow:0 8px 32px rgba(27,67,50,.35);transform:translateY(20px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);max-width:300px;pointer-events:none;}
+#toast.show{transform:translateY(0);opacity:1;}
+
+/* ── Nav Arrows ── */
+.nav-arrows{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;gap:14px;z-index:8800;}
+.nav-arrow-btn{width:52px;height:52px;background:var(--white);border:2px solid var(--sprout);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:0 4px 18px rgba(27,67,50,.18);transition:all .2s cubic-bezier(.34,1.2,.64,1);color:var(--moss);font-family:var(--font-b);}
+.nav-arrow-btn:hover{background:var(--moss);color:#fff;transform:scale(1.12);box-shadow:0 8px 28px rgba(27,67,50,.28);}
+.nav-arrow-btn:active{transform:scale(0.96);}
+.nav-arrow-btn:disabled{opacity:.25;cursor:not-allowed;pointer-events:none;}
+
+/* ── Gov strip ── */
+.gov-strip{background:var(--sky);color:rgba(255,255,255,.85);font-size:11px;font-weight:500;letter-spacing:.4px;padding:6px 0;}
+.gov-inner{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.gov-emblem{display:flex;align-items:center;gap:9px;font-weight:600;}
+.tricolour{display:flex;flex-direction:column;height:16px;width:26px;border:1px solid rgba(255,255,255,.3);border-radius:2px;overflow:hidden;flex-shrink:0;}
+.tricolour div{flex:1;}
+.t-sf{background:#FF9933;}.t-wh{background:#fff;display:flex;align-items:center;justify-content:center;}.t-gr{background:#138808;}
+.chakra{font-size:7px;color:#000080;line-height:1;}
+
+/* ── App header ── */
+.app-header{background:var(--white);border-bottom:3px solid var(--sprout);box-shadow:0 2px 12px rgba(27,67,50,.08);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:66px;flex-shrink:0;position:sticky;top:0;z-index:200;}
+.disease-header{border-bottom-color:var(--amber-mid);}
+.hdr-brand{display:flex;align-items:center;gap:14px;}
+.hdr-logo{width:44px;height:44px;flex-shrink:0;background:linear-gradient(145deg,var(--moss),var(--sprout));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 12px rgba(27,67,50,.2);}
+.hdr-logo.amber{background:linear-gradient(145deg,var(--amber),var(--amber-mid));}
+.hdr-text h1{font-family:var(--font-h);font-size:20px;font-weight:700;color:var(--moss);}
+.hdr-text p{font-size:10.5px;color:var(--fog);margin-top:1px;}
+.hdr-text small{font-size:9.5px;color:var(--saffron);font-weight:600;text-transform:uppercase;letter-spacing:.8px;}
+.hdr-right{display:flex;align-items:center;gap:12px;flex-wrap:nowrap;overflow:hidden;}
+.status-pill{display:flex;align-items:center;gap:6px;background:var(--smoke);border:1px solid rgba(44,26,14,.1);border-radius:20px;padding:5px 14px;font-size:11.5px;color:var(--fog);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--fog);flex-shrink:0;}
+.dot.live{background:var(--sprout);animation:blink 2s infinite;}
+.dot.err{background:var(--red);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.last-upd{font-size:11px;color:var(--fog);}
+.lang-btn{background:var(--moss);color:#fff;border:none;border-radius:var(--r);padding:7px 16px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font-b);letter-spacing:.3px;transition:background .15s;}
+.lang-btn:hover{background:var(--leaf);}
+
+/* ── Gov footer ── */
+.gov-footer{background:var(--moss);color:rgba(255,255,255,.6);font-size:11px;padding:14px 0;}
+
+/* ── Shared splash background ── */
+.splash-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.splash-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 15% 10%,rgba(64,145,108,.1) 0%,transparent 70%),radial-gradient(ellipse 50% 70% at 85% 90%,rgba(44,26,14,.07) 0%,transparent 70%),radial-gradient(ellipse 35% 35% at 50% 50%,rgba(244,228,193,.7) 0%,transparent 80%);}
+.leaf-deco{position:absolute;font-size:200px;opacity:.035;line-height:1;animation:floatLeaf 12s ease-in-out infinite;user-select:none;}
+.leaf-deco:nth-child(1){top:-40px;right:-20px;transform:rotate(-25deg);animation-delay:0s;}
+.leaf-deco:nth-child(2){bottom:-60px;left:-30px;transform:rotate(15deg);animation-delay:-6s;font-size:160px;}
+.leaf-deco:nth-child(3){top:40%;right:8%;transform:rotate(45deg);font-size:80px;opacity:.055;animation-delay:-3s;}
+@keyframes floatLeaf{0%,100%{transform:rotate(-25deg) translateY(0);}50%{transform:rotate(-25deg) translateY(-18px);}}
+
+.splash-gov{background:var(--sky);color:rgba(255,255,255,.85);font-size:11px;font-weight:500;letter-spacing:.4px;padding:7px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:1;}
+.splash-body{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 20px;position:relative;z-index:1;overflow-y:auto;}
+.splash-center{max-width:720px;width:100%;text-align:center;}
+
+.splash-badge{width:90px;height:90px;margin:0 auto 22px;background:linear-gradient(145deg,var(--moss),var(--sprout));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:42px;line-height:1;box-shadow:0 12px 40px rgba(27,67,50,.28),0 0 0 8px rgba(64,145,108,.12);animation:badgePulse 3s ease-in-out infinite;}
+@keyframes badgePulse{0%,100%{box-shadow:0 12px 40px rgba(27,67,50,.28),0 0 0 8px rgba(64,145,108,.12);}50%{box-shadow:0 18px 52px rgba(27,67,50,.38),0 0 0 16px rgba(64,145,108,.07);}}
+
+.splash-scheme{font-size:10px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--saffron);margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px;}
+.splash-scheme::before,.splash-scheme::after{content:'';flex:1;max-width:44px;height:1px;background:var(--saffron);opacity:.35;}
+.splash-title{font-family:var(--font-h);font-size:clamp(44px,9vw,72px);font-weight:800;line-height:1.05;color:var(--moss);letter-spacing:-1.5px;margin-bottom:10px;}
+.splash-title span{color:var(--saffron);}
+.splash-tagline{font-size:15px;color:var(--fog);font-weight:400;margin-bottom:4px;letter-spacing:.1px;}
+.splash-tagline-hi{font-family:'Noto Sans Devanagari',sans-serif;font-size:13.5px;color:var(--fog);opacity:.7;margin-bottom:36px;}
+.splash-divider{display:flex;align-items:center;gap:16px;margin-bottom:28px;}
+.splash-divider::before,.splash-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(44,26,14,.15),transparent);}
+.splash-divider span{font-size:11px;color:var(--fog);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;}
+
+/* ── Language cards ── */
+.lang-cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+.lang-card{flex:0 0 215px;background:var(--white);border:2px solid transparent;border-radius:var(--r2);padding:26px 22px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:10px;transition:all .25s cubic-bezier(.34,1.2,.64,1);box-shadow:0 4px 20px rgba(44,26,14,.06),0 1px 4px rgba(44,26,14,.04);position:relative;overflow:hidden;}
+.lang-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--moss),var(--sprout));transform:scaleX(0);transform-origin:left;transition:transform .3s ease;}
+.lang-card:hover{border-color:var(--lime);transform:translateY(-5px);box-shadow:0 18px 52px rgba(27,67,50,.14),0 4px 12px rgba(27,67,50,.08);}
+.lang-card:hover::before{transform:scaleX(1);}
+.lang-card:active{transform:translateY(-2px) scale(.99);}
+.lc-flag{display:flex;gap:3px;margin-bottom:2px;}
+.lc-flag span{height:6px;width:28px;border-radius:1px;display:block;}
+.f-sf{background:#FF9933;}.f-wh{background:#ddd;}.f-gr{background:#138808;}
+.lc-lang{font-family:var(--font-h);font-size:26px;font-weight:700;color:var(--moss);}
+.lc-sublabel{font-size:12px;color:var(--fog);line-height:1.4;}
+.lc-arrow{margin-top:4px;font-size:18px;color:var(--lime);transition:transform .2s ease;display:block;}
+.lang-card:hover .lc-arrow{transform:translateX(5px);}
+.splash-features{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:32px;}
+.feat-pill{background:rgba(27,67,50,.06);border:1px solid rgba(27,67,50,.1);border-radius:20px;padding:5px 13px;font-size:11px;color:var(--moss);font-weight:500;display:flex;align-items:center;gap:5px;}
+
+/* ═══ LANGUAGE SPLASH ═══ */
+#langSplash{position:fixed;inset:0;z-index:8000;background:var(--cream);display:flex;flex-direction:column;transition:opacity .5s ease,visibility .5s ease;overflow:hidden;}
+#langSplash.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+
+/* ═══ MODULE PAGE ═══ */
+#modulePage{position:fixed;inset:0;z-index:7500;background:var(--cream);display:flex;flex-direction:column;transition:opacity .5s ease,visibility .5s ease;overflow:hidden;}
+#modulePage.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+
+.module-cards{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;}
+.module-card{flex:0 0 268px;background:var(--white);border:2px solid transparent;border-radius:20px;padding:30px 24px 26px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:11px;transition:all .3s cubic-bezier(.34,1.2,.64,1);box-shadow:0 6px 28px rgba(44,26,14,.07);position:relative;overflow:hidden;}
+.module-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;transform:scaleX(0);transform-origin:left;transition:transform .35s ease;}
+.module-card.soil-mod::before{background:linear-gradient(90deg,var(--moss),var(--sprout),var(--lime));}
+.module-card.dis-mod::before{background:linear-gradient(90deg,var(--amber),var(--amber-mid),#f4c430);}
+.module-card:hover{transform:translateY(-6px);}
+.module-card.soil-mod:hover{border-color:var(--lime);box-shadow:0 20px 56px rgba(27,67,50,.16);}
+.module-card.dis-mod:hover{border-color:var(--amber-mid);box-shadow:0 20px 56px rgba(176,94,0,.16);}
+.module-card:hover::before{transform:scaleX(1);}
+.module-card:active{transform:translateY(-3px) scale(.99);}
+
+.mc-icon{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;box-shadow:0 6px 20px rgba(0,0,0,.12);}
+.mc-icon.soil-i{background:linear-gradient(145deg,var(--moss),var(--sprout));}
+.mc-icon.dis-i{background:linear-gradient(145deg,var(--amber),var(--amber-mid));}
+.mc-badge{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:2px 9px;border-radius:20px;align-self:flex-start;}
+.mc-badge.soil-b{background:rgba(27,67,50,.1);color:var(--moss);}
+.mc-badge.dis-b{background:rgba(176,94,0,.1);color:var(--amber);}
+.mc-title{font-family:var(--font-h);font-size:1.28rem;font-weight:700;color:var(--soil);line-height:1.2;}
+.mc-desc{font-size:12px;color:var(--fog);line-height:1.7;}
+.mc-features{list-style:none;padding:0;margin-top:2px;width:100%;}
+.mc-features li{font-size:11.5px;color:var(--fog);padding:4px 0;display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(44,26,14,.06);}
+.mc-features li:last-child{border-bottom:none;padding-bottom:0;}
+.mc-features li::before{content:'✓';font-size:10px;font-weight:700;}
+.mc-features.soil-f li::before{color:var(--sprout);}
+.mc-features.dis-f  li::before{color:var(--amber-mid);}
+.mc-arrow{margin-top:4px;font-size:22px;align-self:flex-end;transition:all .2s ease;color:var(--fog);}
+.module-card.soil-mod:hover .mc-arrow{color:var(--sprout);transform:translateX(5px);}
+.module-card.dis-mod:hover  .mc-arrow{color:var(--amber-mid);transform:translateX(5px);}
+
+/* ═══ SETUP PAGE ═══ */
+#setupPage{min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+#setupPage .setup-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+#setupPage .setup-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 15% 10%,rgba(64,145,108,.11) 0%,transparent 70%),radial-gradient(ellipse 50% 70% at 85% 90%,rgba(44,26,14,.08) 0%,transparent 70%),radial-gradient(ellipse 35% 35% at 50% 50%,rgba(244,228,193,.7) 0%,transparent 80%);}
+#setupPage .setup-leaf{position:fixed;font-size:200px;opacity:.035;line-height:1;pointer-events:none;z-index:0;user-select:none;}
+#setupPage .setup-leaf:nth-child(1){top:-40px;right:-20px;transform:rotate(-25deg);animation:floatLeaf 12s ease-in-out infinite;}
+#setupPage .setup-leaf:nth-child(2){bottom:-60px;left:-30px;transform:rotate(15deg);font-size:160px;animation:floatLeaf 11s ease-in-out infinite;animation-delay:-6s;}
+#setupPage .setup-leaf:nth-child(3){top:40%;right:8%;font-size:80px;opacity:.055;animation:floatLeaf 9s ease-in-out infinite;animation-delay:-3s;}
+#setupPage .setup-leaf:nth-child(4){top:18%;left:5%;font-size:65px;opacity:.04;animation:floatLeaf 13s ease-in-out infinite;animation-delay:-9s;}
+#setupPage .gov-strip{position:relative;z-index:10;}
+.setup-body{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;position:relative;z-index:1;}
+.setup-center{max-width:560px;width:100%;}
+.conn-card{background:var(--white);border-radius:20px;padding:42px 40px 36px;width:100%;box-shadow:0 20px 80px rgba(27,67,50,.09),0 4px 20px rgba(27,67,50,.05);border:1px solid rgba(27,67,50,.07);position:relative;overflow:hidden;text-align:left;}
+.conn-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--moss),var(--sprout),var(--lime),var(--sprout),var(--moss));background-size:200%;animation:shimmer 4s linear infinite;border-radius:20px 20px 0 0;}
+@keyframes shimmer{0%{background-position:200% center;}100%{background-position:-200% center;}}
+.conn-card::after{content:'🌿';position:absolute;right:-28px;bottom:-28px;font-size:170px;opacity:.03;line-height:1;pointer-events:none;}
+.card-icon-row{display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
+.card-icon-badge{width:58px;height:58px;background:linear-gradient(145deg,var(--moss),var(--sprout));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 22px rgba(27,67,50,.22);}
+.card-h{font-family:var(--font-h);font-size:22px;font-weight:700;color:var(--moss);text-align:center;margin-bottom:6px;}
+.card-p{font-size:13px;color:var(--fog);text-align:center;line-height:1.75;margin-bottom:26px;}
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.field-label{font-size:10px;font-weight:600;color:var(--fog);text-transform:uppercase;letter-spacing:.9px;}
+.field-input{background:var(--smoke);border:1.5px solid rgba(44,26,14,.1);border-radius:var(--r);color:var(--soil);font-size:13.5px;padding:11px 14px;outline:none;font-family:var(--font-b);transition:border-color .15s,box-shadow .15s;}
+.field-input:focus{border-color:var(--sprout);box-shadow:0 0 0 3px rgba(64,145,108,.12);}
+.fields-row{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:22px;}
+.btn-connect{width:100%;padding:14px;background:linear-gradient(135deg,var(--moss),var(--sprout));border:none;border-radius:var(--r);color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:var(--font-b);box-shadow:0 6px 24px rgba(27,67,50,.25);transition:all .2s ease;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;z-index:1;}
+.btn-connect:hover{transform:translateY(-2px);box-shadow:0 14px 38px rgba(27,67,50,.32);}
+.or-divider{display:flex;align-items:center;gap:10px;margin:4px 0;}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:rgba(44,26,14,.1);}
+.or-divider span{font-size:11px;color:var(--fog);}
+.btn-demo{width:100%;padding:12px;background:transparent;border:2px solid var(--sky);border-radius:var(--r);color:var(--sky);font-weight:600;font-size:14px;cursor:pointer;font-family:var(--font-b);transition:all .15s ease;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;z-index:1;}
+.btn-demo:hover{background:rgba(26,63,138,.06);}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(44,26,14,.08);position:relative;z-index:1;}
+.info-item{display:flex;align-items:flex-start;gap:9px;background:linear-gradient(135deg,rgba(27,67,50,.04),rgba(64,145,108,.04));border:1px solid rgba(27,67,50,.07);border-radius:var(--r);padding:10px 12px;transition:all .2s ease;}
+.info-item:hover{border-color:var(--lime);background:linear-gradient(135deg,rgba(27,67,50,.07),rgba(64,145,108,.07));transform:translateY(-1px);}
+.ii-icon{font-size:15px;flex-shrink:0;margin-top:2px;}
+.ii-text{font-size:11px;color:var(--fog);line-height:1.5;}
+.ii-text strong{display:block;color:var(--leaf);font-weight:600;font-size:11.5px;margin-bottom:1px;}
+#setupPage .gov-footer{position:relative;z-index:10;}
+
+/* ═══ MAIN APP (SOIL) ═══ */
+#mainApp{display:flex;flex-direction:column;min-height:100vh;}
+.tab-nav{background:var(--white);border-bottom:2px solid rgba(27,67,50,.1);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:66px;z-index:150;box-shadow:0 2px 8px rgba(27,67,50,.06);}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-btn{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 20px 9px;border:none;background:transparent;cursor:pointer;font-family:var(--font-b);color:var(--fog);border-bottom:3px solid transparent;transition:all .18s ease;min-width:96px;}
+.tab-btn:hover{background:var(--mist);color:var(--leaf);}
+.tab-btn.active{color:var(--moss);border-bottom-color:var(--sprout);background:linear-gradient(180deg,var(--mist),transparent);}
+.tb-icon{font-size:17px;line-height:1;}
+.tb-label{font-size:10.5px;font-weight:600;letter-spacing:.2px;white-space:nowrap;}
+.tab-content{flex:1;background:var(--smoke);}
+.tab-page{display:none;width:100%;}
+.tab-page.active{display:block;}
+.tab-frame{width:100%;border:none;display:block;min-height:600px;}
+
+/* ═══ DISEASE APP ═══ */
+#diseaseApp{display:flex;flex-direction:column;min-height:100vh;}
+
+@media(max-width:600px){
+  .splash-title{font-size:40px;}
+  .lang-cards,.module-cards{flex-direction:column;align-items:center;}
+  .lang-card,.module-card{flex:unset;width:100%;max-width:320px;}
+  .fields-row{grid-template-columns:1fr;}
+  .info-grid{grid-template-columns:1fr;}
+  .conn-card{padding:28px 18px 24px;}
+  .tab-btn{min-width:76px;padding:9px 11px 8px;}
+  .tb-label{font-size:9.5px;}
+  .app-header{padding:0 14px;}
+  .last-upd{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LANGUAGE SPLASH ═══ -->
+<div id="langSplash">
+  <div class="splash-body">
+    <div class="splash-center">
+      <div class="splash-badge">🌱</div>
+      <div class="splash-scheme"><span>National Soil Health Monitoring Programme</span></div>
+      <h1 class="splash-title">Farm<span>Care</span></h1>
+      <p class="splash-tagline">Intelligent Farming Assistant — AI-powered analytics</p>
+      <p class="splash-tagline-hi">बुद्धिमान कृषि सहायक प्रणाली</p>
+      <div class="splash-divider"><span>Select your language / भाषा चुनें</span></div>
+      <div class="lang-cards">
+        <div class="lang-card" onclick="selectLang('en')">
+          <div class="lc-flag"><span class="f-sf"></span><span class="f-wh"></span><span class="f-gr"></span></div>
+          <div class="lc-lang">English</div>
+          <div class="lc-sublabel">Continue in English</div>
+          <span class="lc-arrow">→</span>
+        </div>
+        <div class="lang-card" onclick="selectLang('hi')">
+          <div class="lc-flag"><span class="f-sf"></span><span class="f-wh"></span><span class="f-gr"></span></div>
+          <div class="lc-lang" style="font-family:'Noto Sans Devanagari',sans-serif;font-size:23px;">हिंदी</div>
+          <div class="lc-sublabel">हिंदी में जारी रखें</div>
+          <span class="lc-arrow">→</span>
+        </div>
+      </div>
+      <div class="splash-features">
+        <span class="feat-pill">🌡 Live Sensor Readings</span>
+        <span class="feat-pill">🤖 AI Soil Detection</span>
+        <span class="feat-pill">🔬 Crop Disease AI</span>
+        <span class="feat-pill">🌦 6 Days Weather</span>
+        <span class="feat-pill">🏪 Mandi Prices</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODULE SELECTION PAGE ═══ -->
+<div id="modulePage" class="hidden">
+  <div class="splash-bg"><div class="leaf-deco">🌿</div><div class="leaf-deco">🌾</div><div class="leaf-deco">🍃</div></div>
+  <div class="splash-body">
+    <div class="splash-center">
+      <div class="splash-badge" style="background:linear-gradient(145deg,#b05e00,#e07b00);">🌾</div>
+      <div class="splash-scheme"><span id="M_tagline">Choose Your Module</span></div>
+      <h1 class="splash-title">Farm<span>Care</span></h1>
+      <p class="splash-tagline" id="M_subtitle">Select a module to continue with your farming needs</p>
+      <p class="splash-tagline-hi" id="M_subtitle_hi">अपनी कृषि आवश्यकता के अनुसार मॉड्यूल चुनें</p>
+      <div class="splash-divider"><span id="M_divider">Select module / मॉड्यूल चुनें</span></div>
+      <div class="module-cards">
+
+        <div class="module-card soil-mod" onclick="selectModule('soil')">
+          <div class="mc-icon soil-i">🌱</div>
+          <span class="mc-badge soil-b" id="M_soil_badge">SOIL MONITORING</span>
+          <div class="mc-title" id="M_soil_title">Soil Health<br>Monitoring</div>
+          <div class="mc-desc" id="M_soil_desc">Live sensor readings, AI soil analysis, weather forecasts, fertilizer recommendations and more.</div>
+          <ul class="mc-features soil-f">
+            <li id="M_soil_f1">Live sensor data from Raspberry Pi</li>
+            <li id="M_soil_f2">AI soil type &amp; crop recommendations</li>
+            <li id="M_soil_f3">Weather, Mandi prices &amp; Health Card PDF</li>
+          </ul>
+          <span class="mc-arrow">→</span>
+        </div>
+
+        <div class="module-card dis-mod" onclick="selectModule('disease')">
+          <div class="mc-icon dis-i">🔬</div>
+          <span class="mc-badge dis-b" id="M_dis_badge">CROP DISEASE AI</span>
+          <div class="mc-title" id="M_dis_title">Crop Disease<br>Detection</div>
+          <div class="mc-desc" id="M_dis_desc">Upload a photo of your crop — AI identifies the disease, its cause, and provides treatment solutions.</div>
+          <ul class="mc-features dis-f">
+            <li id="M_dis_f1">Detects 38 diseases across 14 crops</li>
+            <li id="M_dis_f2">Cause, symptoms &amp; treatment plans</li>
+            <li id="M_dis_f3">Prevention tips &amp; severity assessment</li>
+          </ul>
+          <span class="mc-arrow">→</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SETUP PAGE ═══ -->
+<div id="setupPage" class="hidden">
+  <div class="setup-bg"></div>
+  <div class="setup-leaf">🌿</div><div class="setup-leaf">🌱</div>
+  <div class="setup-leaf">🍃</div><div class="setup-leaf">🌾</div>
+  <div class="setup-body">
+    <div class="setup-center">
+      <div class="conn-card">
+        <div class="card-icon-row"><div class="card-icon-badge">⚙️</div></div>
+        <h2 class="card-h" id="S_card_h">Connect to Raspberry Pi</h2>
+        <p class="card-p" id="S_connect_desc">Enter your Pi's local IP address and port to begin real-time soil health monitoring. Your data never leaves your private network.</p>
+        <div class="fields-row">
+          <div class="field-group">
+            <label class="field-label" id="S_pi_ip_label">Raspberry Pi IP Address</label>
+            <input class="field-input" type="text" id="piIp" value="10.188.75.78" placeholder="e.g. 10.188.75.78">
+          </div>
+          <div class="field-group">
+            <label class="field-label" id="S_port_label">Port</label>
+            <input class="field-input" type="text" id="piPort" value="5000" placeholder="5000">
+          </div>
+        </div>
+        <button class="btn-connect" onclick="connectAndGo()" id="S_connect_btn">📡 Connect &amp; Start Monitoring</button>
+        <div class="or-divider"><span>or</span></div>
+        <button class="btn-demo" onclick="demoAndGo()" id="S_demo_btn">⚡ Demo Mode — No Pi Needed</button>
+        <div class="info-grid">
+          <div class="info-item"><span class="ii-icon">🔒</span><span class="ii-text"><strong>Private &amp; Secure</strong><span id="S_info1">Local network only — data stays on your Pi</span></span></div>
+          <div class="info-item"><span class="ii-icon">📊</span><span class="ii-text"><strong>Live Readings</strong><span id="S_info2">Updated every 2.5 seconds via MQTT</span></span></div>
+          <div class="info-item"><span class="ii-icon">🌦</span><span class="ii-text"><strong>Weather Forecast</strong><span id="S_info3">Live weather + 10-day forecast</span></span></div>
+          <div class="info-item"><span class="ii-icon">📄</span><span class="ii-text"><strong>Health Card PDF</strong><span id="S_info4">Generate official Soil Health Card PDF</span></span></div>
+          <div class="info-item"><span class="ii-icon">🤖</span><span class="ii-text"><strong>AI Analysis</strong><span id="S_info5">AI soil type + fertilizer recommendations</span></span></div>
+          <div class="info-item"><span class="ii-icon">🏪</span><span class="ii-text"><strong>Mandi Prices</strong><span id="S_info6">Live mandi prices from AGMARKNET</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="gov-footer"><div class="gov-inner"><span></span><span></span></div></div>
+</div>
+
+<!-- ═══ SOIL MAIN APP ═══ -->
+<div id="mainApp" class="hidden">
+  <div class="app-header">
+    <div class="hdr-brand">
+      <div class="hdr-logo">🌱</div>
+      <div class="hdr-text">
+        <h1 id="A_title">FarmCare</h1>
+        <small id="A_dept">Intelligent Soil Health Monitoring</small>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="status-pill"><span class="dot" id="dot"></span><span id="stxt">Connecting…</span></div>
+      <span id="lastUpd" class="last-upd">—</span>
+      <button class="lang-btn" onclick="toggleLang()">🌐 <span id="langLabel2">EN</span></button>
+    </div>
+  </div>
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="dashboard"  onclick="switchTab('dashboard')"> <span class="tb-icon">📊</span><span class="tb-label" id="T_dashboard">Dashboard</span></button>
+    <button class="tab-btn" data-tab="weather"           onclick="switchTab('weather')">   <span class="tb-icon">🌦</span><span class="tb-label" id="T_weather">Weather</span></button>
+    <button class="tab-btn" data-tab="soil"              onclick="switchTab('soil')">      <span class="tb-icon">🔬</span><span class="tb-label" id="T_soil">Soil AI</span></button>
+    <button class="tab-btn" data-tab="crops"             onclick="switchTab('crops')">     <span class="tb-icon">⚖️</span><span class="tb-label" id="T_crops">Crop Optimizer</span></button>
+    <button class="tab-btn" data-tab="fertilizer"        onclick="switchTab('fertilizer')"><span class="tb-icon">🧪</span><span class="tb-label" id="T_fertilizer">Fertilizer</span></button>
+    <button class="tab-btn" data-tab="mandi"             onclick="switchTab('mandi')">     <span class="tb-icon">🏪</span><span class="tb-label" id="T_mandi">Mandi Prices</span></button>
+    <button class="tab-btn" data-tab="datalog"           onclick="switchTab('datalog')">   <span class="tb-icon">📁</span><span class="tb-label" id="T_datalog">Data Log</span></button>
+    <button class="tab-btn" data-tab="pdf"               onclick="switchTab('pdf')">       <span class="tb-icon">📄</span><span class="tb-label" id="T_pdf">Health Card</span></button>
+  </nav>
+  <div class="tab-content">
+    <div id="tab-dashboard"  class="tab-page active"><iframe src="/pages/dashboard.html"  id="if-dashboard"  class="tab-frame" onload="frameReady(this)"></iframe></div>
+    <div id="tab-weather"    class="tab-page"><iframe src="/pages/weather.html"    id="if-weather"    class="tab-frame"></iframe></div>
+    <div id="tab-soil"       class="tab-page"><iframe src="/pages/soil.html"       id="if-soil"       class="tab-frame"></iframe></div>
+    <div id="tab-crops"      class="tab-page"><iframe src="/pages/crops.html"      id="if-crops"      class="tab-frame"></iframe></div>
+    <div id="tab-fertilizer" class="tab-page"><iframe src="/pages/fertilizer.html" id="if-fertilizer" class="tab-frame"></iframe></div>
+    <div id="tab-mandi"      class="tab-page"><iframe src="/pages/mandi.html"      id="if-mandi"      class="tab-frame"></iframe></div>
+    <div id="tab-datalog"    class="tab-page"><iframe src="/pages/datalog.html"    id="if-datalog"    class="tab-frame"></iframe></div>
+    <div id="tab-pdf"        class="tab-page"><iframe src="/pages/pdf.html"        id="if-pdf"        class="tab-frame"></iframe></div>
+  </div>
+  <div class="gov-footer"><div class="gov-inner"><span></span><span></span></div></div>
+</div>
+
+<!-- ═══ DISEASE APP ═══ -->
+<div id="diseaseApp" class="hidden">
+  <div class="app-header disease-header">
+    <div class="hdr-brand">
+      <div class="hdr-logo amber">🔬</div>
+      <div class="hdr-text">
+        <h1>FarmCare</h1>
+        <small id="DA_dept">AI Plant Health</small>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <button class="lang-btn" onclick="toggleLang()">🌐 <span id="langLabel3">EN</span></button>
+    </div>
+  </div>
+  <div class="tab-content" style="min-height:80vh;">
+    <iframe src="/pages/crop_disease.html" id="if-crop-disease" class="tab-frame" style="min-height:82vh;" onload="frameReady(this)"></iframe>
+  </div>
+  <div class="gov-footer"><div class="gov-inner"><span></span><span></span></div></div>
+</div>
+
+<!-- ═══ NAVIGATION ARROWS ═══ -->
+<div class="nav-arrows" id="navArrows" style="display:none;">
+  <button class="nav-arrow-btn" id="btnBack"    onclick="navBack()"    title="Go Back">&#8592;</button>
+  <button class="nav-arrow-btn" id="btnForward" onclick="navForward()" title="Go Forward">&#8594;</button>
+</div>
+
+<div id="toast"></div>
+<script src="/js/core.js"></script>
+<script src="/js/lang.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

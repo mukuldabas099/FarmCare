@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Weather</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/css/nav.css">
+<style>
+  :root {
+    --green: #1a7a3c; --green-light: #2ecc71; --navy: #1a2530;
+    --amber: #b05e00; --red: #c0392b; --bg: #eaf3eb;
+    --border: #d9e6d9; --gray2: #3d5166; --gray3: #5f7080; --gray4: #8fa3b3;
+    --r: 18px;
+    --card-shadow: 0 4px 24px rgba(26,122,60,0.10), 0 1.5px 6px rgba(0,0,0,0.05);
+    --card-hover-shadow: 0 8px 36px rgba(26,122,60,0.16), 0 2px 10px rgba(0,0,0,0.08);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #eaf3eb; min-height: 100vh; overflow-x: hidden; position: relative; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse 75% 55% at 8% 18%, rgba(46,204,113,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 88% 78%, rgba(26,122,60,0.09) 0%, transparent 55%),
+                linear-gradient(150deg, #e8f5ec 0%, #f0f9f2 45%, #e4f0e6 100%);
+    z-index: 0; pointer-events: none;
+  }
+  .leaves-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .leaf { position: absolute; opacity: 0.07; animation: floatLeaf linear infinite; will-change: transform; }
+  .leaf:nth-child(1) { left:4%;  top:15%; font-size:1.8rem; animation-duration:20s; }
+  .leaf:nth-child(2) { left:20%; top:70%; font-size:1.4rem; animation-duration:24s; animation-delay:-7s; }
+  .leaf:nth-child(3) { left:45%; top:25%; font-size:1.9rem; animation-duration:22s; animation-delay:-11s; }
+  .leaf:nth-child(4) { left:70%; top:12%; font-size:1.1rem; animation-duration:27s; animation-delay:-4s; }
+  .leaf:nth-child(5) { left:82%; top:65%; font-size:2.1rem; animation-duration:19s; animation-delay:-14s; }
+  .leaf:nth-child(6) { left:93%; top:85%; font-size:1.3rem; animation-duration:23s; animation-delay:-9s; }
+  @keyframes floatLeaf {
+    0%  { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-18px) rotate(8deg); }
+    66% { transform: translateY(-8px) rotate(-5deg); }
+    100%{ transform: translateY(0px) rotate(0deg); }
+  }
+
+  .wrap { position:relative; z-index:1; max-width:1240px; margin:0 auto; padding:28px 24px 52px; }
+
+  .sec-title {
+    font-family:'Playfair Display',serif; font-size:1.22rem; font-weight:700;
+    color:#1a4028; letter-spacing:-0.01em; margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
+  }
+
+  .panel {
+    background:#fff; border:1px solid var(--border); border-radius:20px;
+    padding:24px; box-shadow:var(--card-shadow); position:relative;
+    overflow:visible; margin-bottom:22px;
+  }
+  .panel::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,#1a7a3c,#2ecc71,#b8e08a);
+    border-radius:20px 20px 0 0;
+  }
+
+  /* ── Intro hint ── */
+  .loc-intro {
+    display:flex; align-items:center; gap:12px; margin-bottom:20px;
+    background:linear-gradient(135deg,rgba(26,122,60,.06),rgba(46,204,113,.06));
+    border:1px solid rgba(26,122,60,.15); border-left:4px solid var(--green);
+    border-radius:12px; padding:12px 16px;
+  }
+  .loc-intro-icon { font-size:24px; flex-shrink:0; }
+  .loc-intro-text { font-size:12px; color:var(--gray3); line-height:1.6; }
+  .loc-intro-text strong { display:block; color:var(--navy); font-size:13px; margin-bottom:2px; }
+
+  /* ── Step pills ── */
+  .loc-steps { display:flex; align-items:center; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+  .step-pill {
+    display:flex; align-items:center; gap:7px;
+    background:#f0f7f2; border:1.5px solid var(--border);
+    border-radius:30px; padding:5px 13px 5px 7px;
+    font-size:11.5px; font-weight:600; color:var(--gray4);
+    transition:all .25s ease;
+  }
+  .step-pill.active { background:#e6f4ec; border-color:var(--green); color:var(--green); }
+  .step-pill.done   { background:var(--green); border-color:var(--green); color:#fff; }
+  .step-num {
+    width:20px; height:20px; border-radius:50%; background:var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:9.5px; font-weight:800; flex-shrink:0; color:var(--gray3); transition:all .25s;
+  }
+  .step-pill.active .step-num { background:var(--green); color:#fff; }
+  .step-pill.done   .step-num { background:rgba(255,255,255,.3); color:#fff; }
+  .step-arrow { color:#c8dfc8; font-size:16px; font-weight:300; }
+
+  /* ── Cascading grid ── */
+  .loc-grid {
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:14px;
+    margin-bottom:16px;
+  }
+  @media(max-width:680px){ .loc-grid { grid-template-columns:1fr 1fr; } }
+  @media(max-width:420px){ .loc-grid { grid-template-columns:1fr; } }
+
+  .loc-field { display:flex; flex-direction:column; gap:7px; }
+  .loc-label {
+    font-size:9px; color:var(--gray4); text-transform:uppercase;
+    letter-spacing:1.1px; font-weight:700; display:flex; align-items:center; gap:5px;
+  }
+
+  /* Shared select style */
+  .loc-sel {
+    font-family:'DM Sans',sans-serif; font-size:13px; color:var(--navy);
+    background:#f4f9f5; border:1.5px solid var(--border); border-radius:12px;
+    padding:11px 36px 11px 14px; outline:none; width:100%; cursor:pointer;
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238fa3b3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .loc-sel:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(26,122,60,.1); }
+  .loc-sel:disabled { opacity:.45; cursor:not-allowed; background-color:#f0f4f0; }
+
+  /* ── Town autocomplete ── */
+  .town-wrap { position:relative; }
+  .town-inp {
+    font-family:'DM Sans',sans-serif; font-size:13px; color:var(--navy);
+    background:#f4f9f5; border:1.5px solid var(--border); border-radius:12px;
+    padding:11px 38px 11px 14px; outline:none; width:100%;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .town-inp:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(26,122,60,.1); }
+  .town-inp:disabled { opacity:.45; cursor:not-allowed; background:#f0f4f0; }
+  .town-inp::placeholder { color:var(--gray4); }
+
+  .town-suffix {
+    position:absolute; right:11px; top:50%; transform:translateY(-50%);
+    pointer-events:none;
+  }
+  .town-spinner {
+    width:15px; height:15px; border:2px solid #d9e6d9;
+    border-top-color:var(--green); border-radius:50%;
+    animation:tspin .7s linear infinite; display:none;
+  }
+  .town-spinner.show { display:block; }
+  .town-clear-btn {
+    background:none; border:none; cursor:pointer; font-size:14px;
+    color:var(--gray4); padding:2px; line-height:1; pointer-events:auto; display:none;
+  }
+  .town-clear-btn.show { display:inline; }
+  @keyframes tspin { to { transform:translateY(-50%) rotate(360deg); } }
+
+  /* Dropdown */
+  .town-dropdown {
+    position:absolute; top:calc(100% + 7px); left:0; right:0; z-index:600;
+    background:#fff; border:1.5px solid var(--border); border-radius:16px;
+    box-shadow:0 12px 40px rgba(26,122,60,.18); max-height:240px; overflow-y:auto;
+    display:none; scrollbar-width:thin; scrollbar-color:#c8dfc8 transparent;
+  }
+  .town-dropdown.open { display:block; }
+  .town-opt {
+    display:flex; align-items:flex-start; gap:10px; padding:10px 14px;
+    cursor:pointer; border-bottom:1px solid #f0f6f1; transition:background .12s;
+  }
+  .town-opt:last-child { border-bottom:none; border-radius:0 0 14px 14px; }
+  .town-opt:first-child { border-radius:14px 14px 0 0; }
+  .town-opt:only-child  { border-radius:14px; }
+  .town-opt:hover, .town-opt.focused { background:#f0f9f2; }
+  .town-opt-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+  .town-opt-main { font-size:12.5px; font-weight:600; color:var(--navy); }
+  .town-opt-sub  { font-size:10.5px; color:var(--gray4); margin-top:2px; }
+  .town-no-res   { padding:16px 14px; text-align:center; font-size:12px; color:var(--gray4); }
+
+  /* ── Action row ── */
+  .loc-action-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .btn-apply {
+    font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,#1a7a3c 0%,#1e9647 60%,#2ecc71 100%);
+    border:none; border-radius:12px; padding:12px 24px; cursor:pointer;
+    box-shadow:0 3px 14px rgba(26,122,60,.28);
+    transition:transform .2s, box-shadow .2s, filter .2s, opacity .2s;
+    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+    opacity:.4; pointer-events:none;
+  }
+  .btn-apply.ready { opacity:1; pointer-events:auto; }
+  .btn-apply.ready:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(26,122,60,.38); filter:brightness(1.05); }
+  .btn-apply.ready:active { transform:translateY(0); }
+
+  .adv-toggle {
+    font-size:11.5px; color:var(--gray4); background:none; border:none;
+    cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+    padding:0; font-family:'DM Sans',sans-serif; margin-left:auto;
+    transition:color .15s;
+  }
+  .adv-toggle:hover { color:var(--green); }
+
+  /* Advanced block */
+  .adv-block { display:none; margin-top:16px; border-top:1px dashed var(--border); padding-top:16px; }
+  .adv-block.open { display:block; }
+  .adv-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  @media(max-width:480px){ .adv-row { grid-template-columns:1fr; } }
+  .adv-lbl { font-size:9px; color:var(--gray4); text-transform:uppercase; letter-spacing:1px; font-weight:700; display:block; margin-bottom:6px; }
+  .adv-inp {
+    font-family:'DM Sans',sans-serif; font-size:13px; color:var(--navy);
+    background:#f4f9f5; border:1.5px solid var(--border); border-radius:12px;
+    padding:11px 14px; outline:none; width:100%;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .adv-inp:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(26,122,60,.08); }
+  .btn-manual {
+    font-family:'DM Sans',sans-serif; font-size:12.5px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,#1a3f8a,#2255b8);
+    border:none; border-radius:10px; padding:10px 20px; cursor:pointer;
+    box-shadow:0 3px 12px rgba(26,63,138,.25);
+    transition:transform .18s, filter .18s; display:inline-flex; align-items:center; gap:7px;
+  }
+  .btn-manual:hover { transform:translateY(-2px); filter:brightness(1.08); }
+
+  /* Status bar */
+  .loc-status {
+    background:#f4f8f4; border:1px solid var(--border); border-radius:12px;
+    padding:10px 15px; margin-top:16px; font-size:11.5px; color:var(--gray3);
+    display:flex; align-items:center; gap:8px; transition:background .3s;
+  }
+
+  /* ══ Weather ══ */
+  .weather-main { display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:16px; }
+  .weather-icon { font-size:52px; line-height:1; flex-shrink:0; }
+  .weather-temp { font-family:'Playfair Display',serif; font-size:2.4rem; font-weight:700; color:var(--navy); line-height:1; }
+  .weather-desc { font-size:13px; color:var(--gray2); margin-top:4px; }
+  .weather-loc  { font-size:11px; color:var(--gray4); margin-top:2px; }
+  .weather-stats {
+    display:flex; gap:0; flex-wrap:wrap; margin-left:auto;
+    background:linear-gradient(135deg,#f4f9f5,#edf7f0);
+    border:1.5px solid var(--border); border-radius:16px; overflow:hidden;
+    flex-shrink:0; max-width:100%;
+  }
+  @media(max-width:700px){ .weather-stats{margin-left:0;width:100%;} .wstat{flex:1;min-width:80px;} }
+  .wstat { display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 18px; position:relative; }
+  .wstat + .wstat::before { content:''; position:absolute; left:0; top:20%; bottom:20%; width:1px; background:var(--border); }
+  .wlbl { font-size:8.5px; color:var(--gray4); text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+  .wstat .wval { font-family:'Playfair Display',serif; font-size:15px; font-weight:700; color:var(--navy); }
+
+  .weather-advice {
+    background:linear-gradient(135deg,rgba(26,122,60,.07),rgba(46,204,113,.07));
+    border:1px solid rgba(26,122,60,.18); border-left:3px solid var(--green);
+    border-radius:12px; padding:12px 16px; font-size:12.5px; color:#1a5c2e; line-height:1.65; font-weight:500;
+  }
+  .weather-advice.rain { background:linear-gradient(135deg,rgba(26,49,138,.06),rgba(74,108,212,.06)); border-color:#4a6cd4; border-left-color:var(--navy); color:var(--navy); }
+  .weather-advice.heat { background:linear-gradient(135deg,rgba(192,57,43,.06),rgba(231,76,60,.06)); border-color:#e57465; border-left-color:var(--red); color:#8b1a1a; }
+
+  /* ══ Forecast ══ */
+  .forecast-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  @media(max-width:700px){ .forecast-grid{grid-template-columns:repeat(4,1fr);} }
+  @media(max-width:500px){ .forecast-grid{grid-template-columns:repeat(3,1fr);} }
+  .fc-card {
+    background:linear-gradient(135deg,#f4f9f5,#edf7f0);
+    border:1.5px solid var(--border); border-radius:14px; padding:12px 8px 10px;
+    text-align:center; transition:transform .2s, box-shadow .2s, border-color .2s;
+    position:relative; overflow:hidden;
+  }
+  .fc-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--green),var(--green-light)); border-radius:14px 14px 0 0; }
+  .fc-card:hover { transform:translateY(-3px); box-shadow:0 6px 18px rgba(26,122,60,.14); border-color:rgba(26,122,60,.3); }
+  .fc-date { font-size:8.5px; color:var(--gray4); font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:5px; }
+  .fc-icon { font-size:20px; margin-bottom:5px; display:block; }
+  .fc-temp { font-family:'Playfair Display',serif; font-size:11.5px; color:var(--navy); font-weight:700; }
+  .fc-rain { font-size:9.5px; margin-top:4px; font-weight:500; }
+  .fc-irr  { font-size:8px; margin-top:5px; padding:2px 6px; border-radius:20px; display:inline-block; font-weight:700; letter-spacing:.3px; }
+  .irr-skip   { background:rgba(192,57,43,.10); color:var(--red); }
+  .irr-reduce { background:rgba(176,94,0,.10);  color:var(--amber); }
+  .irr-normal { background:rgba(26,122,60,.10); color:var(--green); }
+  .empty-msg  { font-size:11px; color:var(--gray4); grid-column:1/-1; padding:8px 0; }
+
+  @media(max-width:600px){
+    .wrap { padding:16px 14px 40px; }
+    .sec-title { font-size:1.05rem; }
+    .weather-stats { margin-left:0; width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="leaves-bg" aria-hidden="true">
+  <span class="leaf">🌿</span><span class="leaf">🍃</span><span class="leaf">🌱</span>
+  <span class="leaf">🍃</span><span class="leaf">🌿</span><span class="leaf">🌱</span>
+</div>
+
+<div class="wrap">
+
+  <!-- ══ Location Panel ══ -->
+  <div class="sec-title">📍 Farm Location</div>
+  <div class="panel">
+
+    <div class="loc-intro">
+      <span class="loc-intro-icon">🧑‍🌾</span>
+      <div class="loc-intro-text">
+        <strong>Select your farm location in 3 easy steps — no coordinates needed</strong>
+        Choose your State → District → then search for your Town or Village by name.
+      </div>
+    </div>
+
+    <!-- Step progress -->
+    <div class="loc-steps">
+      <div class="step-pill active" id="pill1"><span class="step-num">1</span> State</div>
+      <span class="step-arrow">›</span>
+      <div class="step-pill" id="pill2"><span class="step-num">2</span> District</div>
+      <span class="step-arrow">›</span>
+      <div class="step-pill" id="pill3"><span class="step-num">3</span> Town / Village</div>
+    </div>
+
+    <!-- Dropdowns -->
+    <div class="loc-grid">
+      <!-- State -->
+      <div class="loc-field">
+        <span class="loc-label">🗺 State / UT</span>
+        <select class="loc-sel" id="selState" onchange="onStateChange()">
+          <option value="">— Select State —</option>
+        </select>
+      </div>
+
+      <!-- District -->
+      <div class="loc-field">
+        <span class="loc-label">📌 District</span>
+        <select class="loc-sel" id="selDistrict" onchange="onDistrictChange()" disabled>
+          <option value="">— Select District —</option>
+        </select>
+      </div>
+
+      <!-- Town search -->
+      <div class="loc-field">
+        <span class="loc-label">🏘 Town / Village</span>
+        <div class="town-wrap">
+          <input class="town-inp" id="townInp" type="text"
+            placeholder="Type to search…" disabled autocomplete="off" spellcheck="false">
+          <span class="town-suffix">
+            <div class="town-spinner" id="townSpinner"></div>
+            <button class="town-clear-btn" id="townClear" onclick="clearTown()" title="Clear">✕</button>
+          </span>
+          <div class="town-dropdown" id="townDrop"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action row -->
+    <div class="loc-action-row">
+      <button class="btn-apply" id="btnApply" onclick="applyLocation()">
+        🌍 Get Weather
+      </button>
+      <button class="adv-toggle" id="advBtn" onclick="toggleAdv()">
+        ⚙ Enter coordinates manually ▾
+      </button>
+    </div>
+
+    <!-- Advanced / manual lat-lon -->
+    <div class="adv-block" id="advBlock">
+      <div class="adv-row">
+        <div>
+          <span class="adv-lbl">Latitude</span>
+          <input class="adv-inp" id="locLat" type="text" placeholder="e.g. 28.6139" value="28.6139">
+        </div>
+        <div>
+          <span class="adv-lbl">Longitude</span>
+          <input class="adv-inp" id="locLon" type="text" placeholder="e.g. 77.2090" value="77.2090">
+        </div>
+      </div>
+      <button class="btn-manual" onclick="applyManual()">📡 Use These Coordinates</button>
+    </div>
+
+    <!-- Status -->
+    <div class="loc-status">
+      <span>📍</span>
+      <span id="locStatusText" style="color:#8fa3b3;">Select your state to get started</span>
+    </div>
+  </div>
+
+  <!-- ══ Live Weather ══ -->
+  <div class="sec-title">🌦 Live Weather &amp; Irrigation Advice</div>
+  <div class="panel">
+    <div class="weather-main">
+      <div class="weather-icon" id="wIcon">🌤</div>
+      <div>
+        <div class="weather-temp" id="wTemp">—°C</div>
+        <div class="weather-desc" id="wDesc">Select your farm location above to load weather</div>
+        <div class="weather-loc"  id="wCity"></div>
+      </div>
+      <div class="weather-stats">
+        <div class="wstat"><span class="wlbl">Humidity</span><span class="wval" id="wHum">—</span></div>
+        <div class="wstat"><span class="wlbl">Wind</span><span class="wval" id="wWind">—</span></div>
+        <div class="wstat"><span class="wlbl">Rain (9h)</span><span class="wval" id="wRain">—</span></div>
+        <div class="wstat"><span class="wlbl">Updated</span><span class="wval" id="wTime" style="font-size:10px;">—</span></div>
+      </div>
+    </div>
+    <div class="weather-advice" id="wAdvice">⏳ Select your farm location to load weather and irrigation advice…</div>
+  </div>
+
+  <!-- ══ Forecast ══ -->
+  <div class="sec-title">📅 6 Day Forecast</div>
+  <div class="panel">
+    <div class="forecast-grid" id="forecastGrid">
+      <div class="empty-msg">Select location above to load forecast</div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+/* ═══════════════════════════════════════════════
+   INDIA  State → District  (all 28 states + 8 UTs)
+═══════════════════════════════════════════════ */
+const INDIA = {
+  "Andhra Pradesh":["Alluri Sitharama Raju","Anakapalli","Ananthapuramu","Annamayya","Bapatla","Chittoor","Dr. B.R. Ambedkar Konaseema","East Godavari","Eluru","Guntur","Kakinada","Krishna","Kurnool","Nandyal","NTR","Palnadu","Parvathipuram Manyam","Prakasam","Sri Potti Sriramulu Nellore","Sri Sathya Sai","Srikakulam","Tirupati","Visakhapatnam","Vizianagaram","West Godavari","YSR Kadapa"],
+  "Arunachal Pradesh":["Anjaw","Changlang","Dibang Valley","East Kameng","East Siang","Itanagar Capital Complex","Kamle","Kra Daadi","Kurung Kumey","Lepa Rada","Lohit","Longding","Lower Dibang Valley","Lower Siang","Lower Subansiri","Namsai","Pakke-Kessang","Papum Pare","Shi Yomi","Siang","Tirap","Upper Siang","Upper Subansiri","West Kameng","West Siang"],
+  "Assam":["Bajali","Baksa","Barpeta","Biswanath","Bongaigaon","Cachar","Charaideo","Chirang","Darrang","Dhemaji","Dhubri","Dibrugarh","Dima Hasao","Goalpara","Golaghat","Hailakandi","Hojai","Jorhat","Kamrup","Kamrup Metropolitan","Karbi Anglong","Karimganj","Kokrajhar","Lakhimpur","Majuli","Morigaon","Nagaon","Nalbari","Sivasagar","Sonitpur","South Salmara-Mankachar","Tamulpur","Tinsukia","Udalguri","West Karbi Anglong"],
+  "Bihar":["Araria","Arwal","Aurangabad","Banka","Begusarai","Bhagalpur","Bhojpur","Buxar","Darbhanga","East Champaran","Gaya","Gopalganj","Jamui","Jehanabad","Kaimur","Katihar","Khagaria","Kishanganj","Lakhisarai","Madhepura","Madhubani","Munger","Muzaffarpur","Nalanda","Nawada","Patna","Purnia","Rohtas","Saharsa","Samastipur","Saran","Sheikhpura","Sheohar","Sitamarhi","Siwan","Supaul","Vaishali","West Champaran"],
+  "Chhattisgarh":["Balod","Baloda Bazar","Balrampur","Bastar","Bemetara","Bijapur","Bilaspur","Dantewada","Dhamtari","Durg","Gariaband","Gaurela-Pendra-Marwahi","Janjgir-Champa","Jashpur","Kabirdham","Kanker","Khairagarh-Chhuikhadan-Gandai","Kondagaon","Korba","Koriya","Mahasamund","Manendragarh-Chirmiri-Bharatpur","Mohla-Manpur-Ambagarh Chowki","Mungeli","Narayanpur","Raigarh","Raipur","Rajnandgaon","Sarangarh-Bilaigarh","Sukma","Surajpur","Surguja"],
+  "Goa":["North Goa","South Goa"],
+  "Gujarat":["Ahmedabad","Amreli","Anand","Aravalli","Banaskantha","Bharuch","Bhavnagar","Botad","Chhota Udaipur","Dahod","Dang","Devbhoomi Dwarka","Gandhinagar","Gir Somnath","Jamnagar","Junagadh","Kheda","Kutch","Mahisagar","Mehsana","Morbi","Narmada","Navsari","Panchmahal","Patan","Porbandar","Rajkot","Sabarkantha","Surat","Surendranagar","Tapi","Vadodara","Valsad"],
+  "Haryana":["Ambala","Bhiwani","Charkhi Dadri","Faridabad","Fatehabad","Gurugram","Hisar","Jhajjar","Jind","Kaithal","Karnal","Kurukshetra","Mahendragarh","Nuh (Mewat)","Palwal","Panchkula","Panipat","Rewari","Rohtak","Sirsa","Sonipat","Yamunanagar"],
+  "Himachal Pradesh":["Bilaspur","Chamba","Hamirpur","Kangra","Kinnaur","Kullu","Lahaul & Spiti","Mandi","Shimla","Sirmaur","Solan","Una"],
+  "Jharkhand":["Bokaro","Chatra","Deoghar","Dhanbad","Dumka","East Singhbhum","Garhwa","Giridih","Godda","Gumla","Hazaribagh","Jamtara","Khunti","Koderma","Latehar","Lohardaga","Pakur","Palamu","Ramgarh","Ranchi","Sahebganj","Seraikela Kharsawan","Simdega","West Singhbhum"],
+  "Karnataka":["Bagalkot","Ballari","Belagavi","Bengaluru Rural","Bengaluru Urban","Bidar","Chamarajanagar","Chikkaballapur","Chikkamagaluru","Chitradurga","Dakshina Kannada","Davanagere","Dharwad","Gadag","Hassan","Haveri","Kalaburagi","Kodagu","Kolar","Koppal","Mandya","Mysuru","Raichur","Ramanagara","Shivamogga","Tumakuru","Udupi","Uttara Kannada","Vijayapura","Yadgir"],
+  "Kerala":["Alappuzha","Ernakulam","Idukki","Kannur","Kasaragod","Kollam","Kottayam","Kozhikode","Malappuram","Palakkad","Pathanamthitta","Thiruvananthapuram","Thrissur","Wayanad"],
+  "Madhya Pradesh":["Agar Malwa","Alirajpur","Anuppur","Ashoknagar","Balaghat","Barwani","Betul","Bhind","Bhopal","Burhanpur","Chhatarpur","Chhindwara","Damoh","Datia","Dewas","Dhar","Dindori","Guna","Gwalior","Harda","Hoshangabad","Indore","Jabalpur","Jhabua","Katni","Khandwa","Khargone","Mandla","Mandsaur","Morena","Narsimhapur","Neemuch","Niwari","Panna","Raisen","Rajgarh","Ratlam","Rewa","Sagar","Satna","Sehore","Seoni","Shahdol","Shajapur","Sheopur","Shivpuri","Sidhi","Singrauli","Tikamgarh","Ujjain","Umaria","Vidisha"],
+  "Maharashtra":["Ahmednagar","Akola","Amravati","Aurangabad","Beed","Bhandara","Buldhana","Chandrapur","Dhule","Gadchiroli","Gondia","Hingoli","Jalgaon","Jalna","Kolhapur","Latur","Mumbai City","Mumbai Suburban","Nagpur","Nanded","Nandurbar","Nashik","Osmanabad","Palghar","Parbhani","Pune","Raigad","Ratnagiri","Sangli","Satara","Sindhudurg","Solapur","Thane","Wardha","Washim","Yavatmal"],
+  "Manipur":["Bishnupur","Chandel","Churachandpur","Imphal East","Imphal West","Jiribam","Kakching","Kamjong","Kangpokpi","Noney","Pherzawl","Senapati","Tamenglong","Tengnoupal","Thoubal","Ukhrul"],
+  "Meghalaya":["East Garo Hills","East Jaintia Hills","East Khasi Hills","Eastern West Khasi Hills","North Garo Hills","Ri Bhoi","South Garo Hills","South West Garo Hills","South West Khasi Hills","West Garo Hills","West Jaintia Hills","West Khasi Hills"],
+  "Mizoram":["Aizawl","Champhai","Hnahthial","Khawzawl","Kolasib","Lawngtlai","Lunglei","Mamit","Saitual","Serchhip","Siaha"],
+  "Nagaland":["Chumoukedima","Dimapur","Kiphire","Kohima","Longleng","Mokokchung","Mon","Niuland","Noklak","Peren","Phek","Tseminyu","Tuensang","Wokha","Zunheboto"],
+  "Odisha":["Angul","Balangir","Balasore","Bargarh","Bhadrak","Boudh","Cuttack","Deogarh","Dhenkanal","Gajapati","Ganjam","Jagatsinghpur","Jajpur","Jharsuguda","Kalahandi","Kandhamal","Kendrapara","Kendujhar","Khordha","Koraput","Malkangiri","Mayurbhanj","Nabarangpur","Nayagarh","Nuapada","Puri","Rayagada","Sambalpur","Subarnapur","Sundargarh"],
+  "Punjab":["Amritsar","Barnala","Bathinda","Faridkot","Fatehgarh Sahib","Fazilka","Ferozepur","Gurdaspur","Hoshiarpur","Jalandhar","Kapurthala","Ludhiana","Malerkotla","Mansa","Moga","Mohali","Muktsar","Pathankot","Patiala","Rupnagar","Sangrur","Shaheed Bhagat Singh Nagar","Tarn Taran"],
+  "Rajasthan":["Ajmer","Alwar","Banswara","Baran","Barmer","Bharatpur","Bhilwara","Bikaner","Bundi","Chittorgarh","Churu","Dausa","Dholpur","Dungarpur","Hanumangarh","Jaipur","Jaisalmer","Jalore","Jhalawar","Jhunjhunu","Jodhpur","Karauli","Kota","Nagaur","Pali","Pratapgarh","Rajsamand","Sawai Madhopur","Sikar","Sirohi","Sri Ganganagar","Tonk","Udaipur"],
+  "Sikkim":["East Sikkim","North Sikkim","Pakyong","Soreng","South Sikkim","West Sikkim"],
+  "Tamil Nadu":["Ariyalur","Chengalpattu","Chennai","Coimbatore","Cuddalore","Dharmapuri","Dindigul","Erode","Kallakurichi","Kancheepuram","Kanyakumari","Karur","Krishnagiri","Madurai","Mayiladuthurai","Nagapattinam","Namakkal","Nilgiris","Perambalur","Pudukkottai","Ramanathapuram","Ranipet","Salem","Sivaganga","Tenkasi","Thanjavur","Theni","Thoothukudi","Tiruchirappalli","Tirunelveli","Tirupathur","Tiruppur","Tiruvallur","Tiruvannamalai","Tiruvarur","Vellore","Villupuram","Virudhunagar"],
+  "Telangana":["Adilabad","Bhadradri Kothagudem","Hanumakonda","Hyderabad","Jagtial","Jangaon","Jayashankar Bhupalpally","Jogulamba Gadwal","Kamareddy","Karimnagar","Khammam","Kumuram Bheem","Mahabubabad","Mahabubnagar","Mancherial","Medak","Medchal-Malkajgiri","Mulugu","Nagarkurnool","Nalgonda","Narayanpet","Nirmal","Nizamabad","Peddapalli","Rajanna Sircilla","Rangareddy","Sangareddy","Siddipet","Suryapet","Vikarabad","Wanaparthy","Warangal","Yadadri Bhuvanagiri"],
+  "Tripura":["Dhalai","Gomati","Khowai","North Tripura","Sepahijala","South Tripura","Unakoti","West Tripura"],
+  "Uttar Pradesh":["Agra","Aligarh","Ambedkar Nagar","Amethi","Amroha","Auraiya","Ayodhya","Azamgarh","Baghpat","Bahraich","Ballia","Balrampur","Banda","Barabanki","Bareilly","Basti","Bhadohi","Bijnor","Budaun","Bulandshahr","Chandauli","Chitrakoot","Deoria","Etah","Etawah","Farrukhabad","Fatehpur","Firozabad","Gautam Buddha Nagar","Ghaziabad","Ghazipur","Gonda","Gorakhpur","Hamirpur","Hapur","Hardoi","Hathras","Jalaun","Jaunpur","Jhansi","Kannauj","Kanpur Dehat","Kanpur Nagar","Kasganj","Kaushambi","Kushinagar","Lakhimpur Kheri","Lalitpur","Lucknow","Maharajganj","Mahoba","Mainpuri","Mathura","Mau","Meerut","Mirzapur","Moradabad","Muzaffarnagar","Pilibhit","Pratapgarh","Prayagraj","Raebareli","Rampur","Saharanpur","Sambhal","Sant Kabir Nagar","Shahjahanpur","Shamli","Shravasti","Siddharthnagar","Sitapur","Sonbhadra","Sultanpur","Unnao","Varanasi"],
+  "Uttarakhand":["Almora","Bageshwar","Chamoli","Champawat","Dehradun","Haridwar","Nainital","Pauri Garhwal","Pithoragarh","Rudraprayag","Tehri Garhwal","Udham Singh Nagar","Uttarkashi"],
+  "West Bengal":["Alipurduar","Bankura","Birbhum","Cooch Behar","Dakshin Dinajpur","Darjeeling","Hooghly","Howrah","Jalpaiguri","Jhargram","Kalimpong","Kolkata","Malda","Murshidabad","Nadia","North 24 Parganas","Paschim Bardhaman","Paschim Medinipur","Purba Bardhaman","Purba Medinipur","Purulia","South 24 Parganas","Uttar Dinajpur"],
+  "Andaman & Nicobar Islands":["Nicobar","North & Middle Andaman","South Andaman"],
+  "Chandigarh":["Chandigarh"],
+  "Dadra & Nagar Haveli and Daman & Diu":["Dadra & Nagar Haveli","Daman","Diu"],
+  "Delhi":["Central Delhi","East Delhi","New Delhi","North Delhi","North East Delhi","North West Delhi","Shahdara","South Delhi","South East Delhi","South West Delhi","West Delhi"],
+  "Jammu & Kashmir":["Anantnag","Bandipora","Baramulla","Budgam","Doda","Ganderbal","Jammu","Kathua","Kishtwar","Kulgam","Kupwara","Poonch","Pulwama","Rajouri","Ramban","Reasi","Samba","Shopian","Srinagar","Udhampur"],
+  "Ladakh":["Kargil","Leh"],
+  "Lakshadweep":["Lakshadweep"],
+  "Puducherry":["Karaikal","Mahe","Puducherry","Yanam"]
+};
+
+/* ═══ POPULATE STATES ═══ */
+(function() {
+  const sel = document.getElementById('selState');
+  Object.keys(INDIA).sort().forEach(s => {
+    const o = document.createElement('option');
+    o.value = s; o.textContent = s; sel.appendChild(o);
+  });
+})();
+
+/* ═══ STATE CHANGE ═══ */
+function onStateChange() {
+  const state = document.getElementById('selState').value;
+  const dSel  = document.getElementById('selDistrict');
+  dSel.innerHTML = '<option value="">— Select District —</option>';
+  dSel.disabled  = !state;
+  resetTownField();
+  readyOff();
+  if (state) {
+    INDIA[state].forEach(d => {
+      const o = document.createElement('option');
+      o.value = d; o.textContent = d; dSel.appendChild(o);
+    });
+    setPill('step2');
+    setStatus(`✅ ${state} selected — now choose your district`);
+  } else {
+    setPill('step1');
+    setStatus('Select your state to get started');
+  }
+}
+
+/* ═══ DISTRICT CHANGE ═══ */
+function onDistrictChange() {
+  const dist = document.getElementById('selDistrict').value;
+  resetTownField();
+  readyOff();
+  if (dist) {
+    document.getElementById('townInp').disabled = false;
+    document.getElementById('townInp').placeholder = `Search towns in ${dist}…`;
+    setPill('step3');
+    setStatus(`✅ ${dist} selected — type your town or village name`);
+    document.getElementById('townInp').focus();
+  } else {
+    setPill('step2');
+    setStatus('Choose your district');
+  }
+}
+
+/* ═══ TOWN AUTOCOMPLETE ═══ */
+let _timer = null;
+let _chosen = null;
+
+const townInp  = document.getElementById('townInp');
+const townDrop = document.getElementById('townDrop');
+const spinner  = document.getElementById('townSpinner');
+const clearBtn = document.getElementById('townClear');
+
+townInp.addEventListener('input', () => {
+  const q = townInp.value.trim();
+  clearBtn.classList.toggle('show', q.length > 0);
+  _chosen = null; readyOff();
+  clearTimeout(_timer);
+  if (q.length < 2) { closeDrop(); return; }
+  _timer = setTimeout(() => doSearch(q), 430);
+});
+
+townInp.addEventListener('keydown', e => {
+  const items = townDrop.querySelectorAll('.town-opt');
+  if (!items.length) return;
+  const cur = townDrop.querySelector('.focused');
+  let idx = [...items].indexOf(cur);
+  if (e.key === 'ArrowDown')  { e.preventDefault(); idx = Math.min(idx+1, items.length-1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx-1, 0); }
+  else if (e.key === 'Enter' && cur) { e.preventDefault(); cur.click(); return; }
+  else if (e.key === 'Escape') { closeDrop(); return; }
+  else return;
+  items.forEach((el,i) => el.classList.toggle('focused', i===idx));
+  if (items[idx]) items[idx].scrollIntoView({block:'nearest'});
+});
+
+document.addEventListener('click', e => {
+  if (!townInp.contains(e.target) && !townDrop.contains(e.target)) closeDrop();
+});
+
+async function doSearch(q) {
+  const state = document.getElementById('selState').value;
+  const dist  = document.getElementById('selDistrict').value;
+  spinner.classList.add('show');
+  clearBtn.classList.remove('show');
+  closeDrop();
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json`
+              + `&q=${encodeURIComponent(q + ', ' + dist + ', ' + state + ', India')}`
+              + `&addressdetails=1&countrycodes=in&limit=10&accept-language=en`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    spinner.classList.remove('show');
+    clearBtn.classList.toggle('show', townInp.value.trim().length > 0);
+
+    townDrop.innerHTML = '';
+    const seen = new Set();
+    const rows = data.filter(r => {
+      const n = r.display_name.split(',')[0].trim();
+      if (seen.has(n.toLowerCase())) return false;
+      seen.add(n.toLowerCase()); return true;
+    });
+
+    if (!rows.length) {
+      townDrop.innerHTML = `<div class="town-no-res">🔍 No results for "${q}" — try a different spelling</div>`;
+    } else {
+      rows.forEach(r => {
+        const name  = r.display_name.split(',')[0].trim();
+        const sub   = r.display_name.split(',').slice(1,3).join(', ').trim();
+        const icons = {city:'🏙',town:'🏘',village:'🌾',hamlet:'🏡',locality:'📍',suburb:'🏘',administrative:'📌'};
+        const icon  = icons[r.type] || icons[r.addresstype] || '📍';
+        const div   = document.createElement('div');
+        div.className = 'town-opt';
+        div.innerHTML = `<span class="town-opt-icon">${icon}</span>
+          <div><div class="town-opt-main">${name}</div><div class="town-opt-sub">${sub}</div></div>`;
+        div.addEventListener('click', () => pickTown(r, name));
+        townDrop.appendChild(div);
+      });
+    }
+    townDrop.classList.add('open');
+  } catch(err) {
+    spinner.classList.remove('show');
+    townDrop.innerHTML = `<div class="town-no-res">⚠ Search failed — check internet connection</div>`;
+    townDrop.classList.add('open');
+  }
+}
+
+function pickTown(result, name) {
+  _chosen = result;
+  townInp.value = name;
+  clearBtn.classList.add('show');
+  // write coords into hidden advanced fields
+  document.getElementById('locLat').value = parseFloat(result.lat).toFixed(6);
+  document.getElementById('locLon').value = parseFloat(result.lon).toFixed(6);
+  readyOn();
+  closeDrop();
+  const state = document.getElementById('selState').value;
+  const dist  = document.getElementById('selDistrict').value;
+  setPill('done');
+  setStatus(`✅ ${name}, ${dist}, ${state} — click "Get Weather"`);
+}
+
+function clearTown() {
+  townInp.value = '';
+  clearBtn.classList.remove('show');
+  townDrop.innerHTML = '';
+  townDrop.classList.remove('open');
+  _chosen = null;
+  readyOff();
+}
+
+function resetTownField() {
+  document.getElementById('townInp').value = '';
+  document.getElementById('townInp').disabled = true;
+  document.getElementById('townInp').placeholder = 'Type to search…';
+  clearBtn.classList.remove('show');
+  townDrop.innerHTML = '';
+  townDrop.classList.remove('open');
+  _chosen = null;
+}
+
+function closeDrop() {
+  townDrop.classList.remove('open');
+  spinner.classList.remove('show');
+}
+
+/* ═══ STEP PILLS ═══ */
+function setPill(step) {
+  const p = ['pill1','pill2','pill3'].map(id => document.getElementById(id));
+  p.forEach(x => x.className = 'step-pill');
+  const map = { step1:[0], step2:[0,1], step3:[0,1,2], done:[0,1,2] };
+  const doneCount = { step1:0, step2:1, step3:2, done:3 }[step];
+  p.forEach((el,i) => {
+    if (i < doneCount)    el.classList.add('done');
+    else if (i===doneCount) el.classList.add('active');
+  });
+}
+
+function setStatus(msg) {
+  const el = document.getElementById('locStatusText');
+  el.textContent = msg;
+  el.style.color = msg.startsWith('✅')||msg.startsWith('🌤') ? '#1a7a3c' : '#8fa3b3';
+}
+
+function readyOn()  { document.getElementById('btnApply').classList.add('ready'); }
+function readyOff() { document.getElementById('btnApply').classList.remove('ready'); }
+
+/* ═══ ADVANCED TOGGLE ═══ */
+function toggleAdv() {
+  const block = document.getElementById('advBlock');
+  const btn   = document.getElementById('advBtn');
+  const open  = block.classList.toggle('open');
+  btn.textContent = open ? '⚙ Enter coordinates manually ▴' : '⚙ Enter coordinates manually ▾';
+}
+
+/* ═══ APPLY LOCATION (from town pick) ═══ */
+async function applyLocation() {
+  const lat = parseFloat(document.getElementById('locLat').value);
+  const lon = parseFloat(document.getElementById('locLon').value);
+  if (isNaN(lat)||isNaN(lon)) { setStatus('⚠ Please search and select a town first'); return; }
+  await pushCoords(lat, lon);
+}
+
+async function applyManual() {
+  const lat = parseFloat(document.getElementById('locLat').value.trim());
+  const lon = parseFloat(document.getElementById('locLon').value.trim());
+  if (isNaN(lat)||isNaN(lon)) { setStatus('⚠ Enter valid latitude and longitude'); return; }
+  await pushCoords(lat, lon);
+}
+
+async function pushCoords(lat, lon) {
+  setStatus('⏳ Sending location to Pi and fetching weather…');
+  try {
+    const r = await fetch(getBase()+'/set_location',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({lat,lon}), signal: AbortSignal.timeout(6000)
+    });
+    if (!r.ok) throw new Error();
+    setStatus('✅ Location updated — loading weather…');
+    setTimeout(loadWeather, 1500);
+  } catch(e) {
+    setStatus('⚠ Pi unreachable — loading cached weather');
+    loadWeather();
+  }
+}
+
+/* ═══ WEATHER ICONS & BASE ═══ */
+const W_ICONS = {clear:'☀️',cloud:'☁️',rain:'🌧',drizzle:'🌦',thunder:'⛈',snow:'❄️',mist:'🌫️',haze:'🌫️',fog:'🌁'};
+function getWIcon(d) {
+  if (!d) return '🌤';
+  const l = d.toLowerCase();
+  for (const [k,v] of Object.entries(W_ICONS)) if (l.includes(k)) return v;
+  return '🌤';
+}
+function getBase() {
+  try { return window.parent.FC.getBase(); } catch(e) {}
+  return 'http://192.168.182.10:5000';
+}
+
+/* ═══ LOAD WEATHER ═══ */
+async function loadWeather() {
+  try {
+    const r = await fetch(getBase()+'/weather',{signal:AbortSignal.timeout(5000)});
+    if (!r.ok) throw new Error();
+    const w = await r.json();
+    if (w.temperature==null) return;
+    document.getElementById('wIcon').textContent = getWIcon(w.description);
+    document.getElementById('wTemp').textContent = `${w.temperature}°C`;
+    document.getElementById('wDesc').textContent = w.description||'—';
+    document.getElementById('wCity').textContent = w.city?`📍 ${w.city}`:'';
+    document.getElementById('wHum').textContent  = w.humidity!=null?`${w.humidity}%`:'—';
+    document.getElementById('wWind').textContent = w.wind_speed!=null?`${w.wind_speed} km/h`:'—';
+    document.getElementById('wRain').textContent = w.rain_mm!=null?`${w.rain_mm} mm`:'0 mm';
+    document.getElementById('wTime').textContent = w.last_updated||'—';
+    const adv = document.getElementById('wAdvice');
+    adv.textContent = w.advice||'…'; adv.className='weather-advice';
+    if (w.rain_expected) adv.classList.add('rain');
+    else if (w.heat_wave) adv.classList.add('heat');
+    if (w.city) setStatus(`🌤 ${w.city} | ${w.temperature}°C | ${w.description}`);
+    renderForecast(w.forecast||[]);
+  } catch(e) {
+    document.getElementById('wAdvice').textContent = '⚠ Weather service unavailable — ensure your Pi is connected.';
+  }
+}
+
+function renderForecast(f) {
+  const g = document.getElementById('forecastGrid'); g.innerHTML='';
+  if (!f||!f.length){ g.innerHTML='<div class="empty-msg">Select location above to load forecast</div>'; return; }
+  f.forEach(day=>{
+    const rain=day.rain_mm||0;
+    const ic=rain>=5?'irr-skip':rain>=2?'irr-reduce':'irr-normal';
+    const it=rain>=5?'Skip':rain>=2?'Reduce':'Normal';
+    const d=document.createElement('div'); d.className='fc-card';
+    d.innerHTML=`<div class="fc-date">${day.date}</div>
+      <span class="fc-icon">${getWIcon(day.description)}</span>
+      <div class="fc-temp">${day.temp_min}° / ${day.temp_max}°</div>
+      <div class="fc-rain" style="color:${rain>2?'#1a3f8a':'#8fa3b3'}">${rain} mm</div>
+      <span class="fc-irr ${ic}">${it}</span>`;
+    g.appendChild(d);
+  });
+}
+
+window.onSensorData = function(){};
+window.onLangChange = function(){};
+
+loadWeather();
+setInterval(loadWeather, 300000);
+</script>
+</body>
+</html>

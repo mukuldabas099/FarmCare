@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════
+   FarmCare — nav.css
+   Tab navigation + tab content frames
+═══════════════════════════════════════════════ */
+
+/* ── Tab nav bar ─────────────────────────────── */
+.tab-nav{
+  background:#fff;border-bottom:2px solid var(--border);
+  display:flex;overflow-x:auto;scrollbar-width:none;
+  position:sticky;top:var(--header-h,64px);z-index:99;
+  box-shadow:0 2px 4px rgba(0,0,0,.05);
+  -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x mandatory;
+}
+.tab-nav::-webkit-scrollbar{display:none;}
+
+.tab-btn{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;
+  gap:3px;padding:10px 18px 8px;border:none;background:transparent;
+  cursor:pointer;font-family:var(--font);color:var(--gray3);
+  border-bottom:3px solid transparent;transition:all .18s;
+  min-width:90px;
+}
+.tab-btn:hover{background:var(--green-bg);color:var(--green);}
+.tab-btn.active{
+  color:var(--green);border-bottom-color:var(--green);
+  background:var(--green-bg);
+}
+.tb-icon{font-size:16px;line-height:1;}
+.tb-label{font-size:10.5px;font-weight:600;letter-spacing:.3px;text-align:center;}
+
+/* ── Tab content area ────────────────────────── */
+.tab-content{position:relative;}
+
+.tab-page{
+  display:none;
+  width:100%;
+}
+.tab-page.active{display:block;}
+
+.tab-frame{
+  width:100%;
+  border:none;
+  display:block;
+  /* Height will be set dynamically by JS */
+  min-height:600px;
+}
+
+/* ── Shared page wrapper (used inside each iframe page) ── */
+.page-wrap{
+  max-width:1240px;margin:0 auto;padding:20px 20px 60px;
+}
+
+/* ── Shared section title ─────────────────────── */
+.sec-title{
+  font-size:11px;font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:1.2px;
+  margin-bottom:14px;padding-bottom:8px;
+  border-bottom:2px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.sec-tag{
+  background:var(--navy);color:#fff;font-size:9px;
+  padding:2px 7px;border-radius:2px;letter-spacing:.5px;
+}
+
+/* ── Shared card ──────────────────────────────── */
+.panel{
+  background:#fff;border:1px solid var(--border);
+  border-radius:var(--r);padding:20px;margin-bottom:22px;
+}
+
+/* ── Shared button styles ─────────────────────── */
+.btn-primary{
+  padding:9px 20px;background:var(--green);border:none;border-radius:4px;
+  color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;
+  transition:all .15s;font-family:var(--font);
+}
+.btn-primary:hover{background:#166831;}
+.btn-secondary{
+  padding:9px 18px;background:transparent;border:1px solid var(--navy);
+  border-radius:4px;color:var(--navy);font-size:11.5px;font-weight:600;
+  cursor:pointer;font-family:var(--font);
+}
+.btn-secondary:hover{background:var(--blue-bg);}
+.btn-danger{
+  padding:9px 18px;background:transparent;border:1px solid var(--red);
+  border-radius:4px;color:var(--red);font-size:11.5px;cursor:pointer;
+  font-family:var(--font);
+}
+
+/* ── Loading overlay ──────────────────────────── */
+.loading-ov{
+  position:absolute;inset:0;background:rgba(255,255,255,.88);
+  border-radius:var(--r);display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:10;
+}
+.loading-ov.show{display:flex!important;}
+.spin{
+  width:26px;height:26px;border:2px solid #e8ecf0;
+  border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Shared form select ───────────────────────── */
+.sel{
+  background:#f7f9fc;border:1px solid var(--border2);border-radius:4px;
+  color:var(--gray1);font-size:12px;padding:8px 12px;outline:none;
+  cursor:pointer;min-width:200px;font-family:var(--font);
+}
+.sel:focus{border-color:var(--green);}
+
+/* ── Shared input ─────────────────────────────── */
+.inp{
+  background:#f7f9fc;border:1px solid var(--border2);border-radius:4px;
+  color:var(--gray1);font-size:12px;padding:8px 12px;outline:none;
+  font-family:var(--font);
+}
+.inp:focus{border-color:var(--green);}
+
+/* ── Status badges ────────────────────────────── */
+.sts{font-size:9.5px;font-weight:600;text-transform:uppercase;
+     letter-spacing:.8px;padding:2px 7px;border-radius:3px;display:inline-block;}
+.s-ok  {background:#e8f5ee;color:#1a7a3c;}
+.s-warn{background:#fff3e0;color:#b05e00;}
+.s-bad {background:#fdecea;color:#c0392b;}
+.s-err {background:#f0f3f5;color:#5f7080;}
+
+/* ── Bar track ────────────────────────────────── */
+.bar-track{height:3px;background:#e8ecf0;border-radius:2px;margin-top:10px;}
+.bar-fill{height:100%;border-radius:2px;transition:width .7s ease;}
+
+/* ── Log entries ──────────────────────────────── */
+.log-entry{
+  display:flex;align-items:baseline;gap:8px;padding:4px 0;
+  border-bottom:1px solid #f0f3f5;font-size:11px;
+}
+.ltime{color:var(--gray4);min-width:56px;font-variant-numeric:tabular-nums;}
+.lmsg{color:var(--gray2);flex:1;}
+
+@media(max-width:700px){
+  .tab-btn{min-width:70px;padding:8px 10px 7px;}
+  .tb-label{font-size:9.5px;}
+}

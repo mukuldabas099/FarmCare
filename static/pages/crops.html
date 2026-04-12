@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Crop Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/nav.css">
+<style>
+  :root {
+    --green: #1a7a3c;
+    --green-light: #2ecc71;
+    --navy: #1a2530;
+    --amber: #b05e00;
+    --red: #c0392b;
+    --bg: #eaf3eb;
+    --border: #d9e6d9;
+    --gray2: #3d5166;
+    --gray3: #5f7080;
+    --gray4: #8fa3b3;
+    --r: 18px;
+    --card-shadow: 0 4px 24px rgba(26,122,60,0.10), 0 1.5px 6px rgba(0,0,0,0.05);
+    --card-hover-shadow: 0 8px 36px rgba(26,122,60,0.16), 0 2px 10px rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eaf3eb;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ── Animated background ─────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 25%, rgba(46,204,113,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 65% 55% at 85% 75%, rgba(26,122,60,0.09) 0%, transparent 55%),
+      linear-gradient(155deg, #e8f5ec 0%, #f0f9f2 45%, #e4f0e6 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Floating leaves */
+  .leaves-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .leaf {
+    position: absolute;
+    opacity: 0.07;
+    animation: floatLeaf linear infinite;
+    will-change: transform;
+  }
+  .leaf:nth-child(1)  { left: 3%;  top: 12%; font-size: 2rem;   animation-duration: 19s; animation-delay: 0s; }
+  .leaf:nth-child(2)  { left: 22%; top: 72%; font-size: 1.3rem; animation-duration: 23s; animation-delay: -6s; }
+  .leaf:nth-child(3)  { left: 40%; top: 28%; font-size: 1.7rem; animation-duration: 21s; animation-delay: -10s; }
+  .leaf:nth-child(4)  { left: 65%; top: 18%; font-size: 1.1rem; animation-duration: 26s; animation-delay: -4s; }
+  .leaf:nth-child(5)  { left: 78%; top: 60%; font-size: 2rem;   animation-duration: 18s; animation-delay: -13s; }
+  .leaf:nth-child(6)  { left: 90%; top: 82%; font-size: 1.3rem; animation-duration: 22s; animation-delay: -8s; }
+  @keyframes floatLeaf {
+    0%   { transform: translateY(0px) rotate(0deg); }
+    33%  { transform: translateY(-16px) rotate(7deg); }
+    66%  { transform: translateY(-7px) rotate(-4deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  /* ── Layout ──────────────────────────────────────────── */
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 24px 52px;
+  }
+
+  /* ── Section title ───────────────────────────────────── */
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: #1a4028;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Panel / card ────────────────────────────────────── */
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #1a7a3c, #2ecc71, #b8e08a);
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* ── Loading overlay ─────────────────────────────────── */
+  .loading-ov {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(3px);
+    z-index: 10;
+    border-radius: 20px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .loading-ov.show { display: flex; }
+  .loading-ov p {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .spin {
+    width: 32px; height: 32px;
+    border: 3px solid #e0ede2;
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Controls ────────────────────────────────────────── */
+  .crop-controls {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .sel-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 9.5px;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  /* Select */
+  .sel {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--navy);
+    background: #f4f8f4;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 36px 9px 14px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231a7a3c' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .sel:hover, .sel:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(26,122,60,0.10);
+  }
+
+  /* ── Match bar ───────────────────────────────────────── */
+  .match-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f4f8f4;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 14px;
+  }
+  .match-bar-track {
+    width: 180px;
+    height: 8px;
+    background: #e0ede2;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .match-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+    background: var(--green);
+  }
+  .match-pct {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 700;
+    min-width: 46px;
+    color: var(--green);
+  }
+
+  /* ── Opt table ───────────────────────────────────────── */
+  .opt-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 18px;
+    font-size: 12px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .opt-table th {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9.5px;
+    color: #6a8a6a;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    padding: 10px 12px;
+    background: #f2f8f2;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+  }
+  .opt-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #edf3ed;
+    background: #fff;
+    font-size: 11.5px;
+    color: var(--gray2);
+    transition: background 0.15s;
+  }
+  .opt-table tr:last-child td { border-bottom: none; }
+  .opt-table tr:nth-child(even) td { background: #fafcfa; }
+  .opt-table tr:hover td { background: #f2f9f4; }
+
+  /* Status pills inside table */
+  .ot-optimal {
+    display: inline-block;
+    background: #e8f5ee;
+    color: #1a7a3c;
+    font-weight: 700;
+    font-size: 9.5px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .ot-low {
+    display: inline-block;
+    background: #fff3e0;
+    color: #b05e00;
+    font-weight: 700;
+    font-size: 9.5px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .ot-high {
+    display: inline-block;
+    background: #fdecea;
+    color: #c0392b;
+    font-weight: 700;
+    font-size: 9.5px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Suggestions ─────────────────────────────────────── */
+  .sug-item {
+    background: linear-gradient(135deg, #f3faf5 0%, #edf7f0 100%);
+    border-left: 3px solid var(--green);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--gray2);
+    margin-bottom: 8px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .sug-item:hover {
+    transform: translateX(3px);
+    box-shadow: 0 2px 12px rgba(26,122,60,0.12);
+  }
+
+  .sugs-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a4028;
+    margin: 18px 0 10px;
+  }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 16px 14px 40px; }
+    .match-bar-track { width: 120px; }
+    .sec-title { font-size: 1.05rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Floating leaves -->
+<div class="leaves-bg" aria-hidden="true">
+  <span class="leaf">🌿</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌱</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌿</span>
+  <span class="leaf">🌱</span>
+</div>
+
+<div class="wrap">
+  <div class="sec-title">⚖️ Crop Optimization</div>
+  <div class="panel">
+    <div class="loading-ov" id="optLoading"><div class="spin"></div><p>Analyzing…</p></div>
+
+    <div class="crop-controls">
+      <div>
+        <label class="sel-label">Select Your Crop</label>
+        <select class="sel" id="cropOptSel" onchange="runCropOptimize()">
+          <option value="">— Select Crop —</option>
+          <option>Rice</option><option>Wheat</option><option>Maize</option><option>Cotton</option>
+          <option>Sugarcane</option><option>Soybean</option><option>Groundnut</option>
+          <option>Mustard</option><option>Pulses</option><option>Millets</option>
+          <option>Cabbage</option><option>Beans</option>
+        </select>
+      </div>
+      <div id="matchBadge" style="display:none;">
+        <div class="match-bar-wrap">
+          <div class="match-bar-track"><div class="match-bar-fill" id="matchBarFill" style="width:0%"></div></div>
+          <span class="match-pct" id="matchPctTxt">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="optTableWrap" style="display:none;">
+      <table class="opt-table">
+        <thead><tr>
+          <th>Parameter</th><th>Your Value</th><th>Ideal Range</th><th>Unit</th><th>Status</th>
+        </tr></thead>
+        <tbody id="optTableBody"></tbody>
+      </table>
+      <div class="sugs-title">💡 Suggestions</div>
+      <div id="sugList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let _latestData = null;
+
+function getBase() {
+  try { return window.parent.FC.getBase(); } catch(e) { return 'http://192.168.182.10:5000'; }
+}
+
+window.onSensorData = function(data) {
+  _latestData = data;
+  const sel = document.getElementById('cropOptSel');
+  if (sel.value) runCropOptimize();
+};
+
+window.onLangChange = function() {};
+
+window.addEventListener('focus', () => {
+  try {
+    const pc = window.parent.FC._pendingCrop;
+    if (pc) {
+      const sel = document.getElementById('cropOptSel');
+      sel.value = pc;
+      window.parent.FC._pendingCrop = null;
+      runCropOptimize();
+    }
+  } catch(e) {}
+});
+
+async function runCropOptimize() {
+  const crop = document.getElementById('cropOptSel').value;
+  if (!crop || !_latestData) return;
+  document.getElementById('optLoading').classList.add('show');
+  try {
+    const res = await fetch(getBase()+'/optimize_crop',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({..._latestData, crop_name:crop}),
+      signal:AbortSignal.timeout(8000)
+    });
+    if (!res.ok) throw new Error();
+    displayOptResult(await res.json());
+  } catch(e) {
+    console.error('Optimization error:', e);
+  } finally {
+    document.getElementById('optLoading').classList.remove('show');
+  }
+}
+
+function displayOptResult(data) {
+  const pct = data.overall_match_pct || 0;
+  const color = pct>=80?'#1a7a3c':pct>=50?'#b05e00':'#c0392b';
+  document.getElementById('matchBadge').style.display = 'flex';
+  document.getElementById('matchBarFill').style.cssText = `width:${pct}%;background:${color}`;
+  const pctEl = document.getElementById('matchPctTxt');
+  pctEl.textContent = pct + '%'; pctEl.style.color = color;
+
+  const tb = document.getElementById('optTableBody'); tb.innerHTML = '';
+  (data.comparison || []).forEach(c => {
+    const tr = document.createElement('tr');
+    const sc = c.status==='optimal'?'ot-optimal':c.status==='low'?'ot-low':'ot-high';
+    const sl = c.status==='optimal'?'✓ Optimal':c.status==='low'?'▼ Low':c.status==='error'?'N/A':'▲ High';
+    tr.innerHTML = `<td style="font-weight:600;color:var(--navy);">${c.param.charAt(0).toUpperCase()+c.param.slice(1)}</td>
+      <td>${c.value!=='N/A'?c.value:'—'}</td>
+      <td>${c.ideal}</td><td style="color:#8fa3b3;">${c.unit}</td>
+      <td><span class="${sc}">${sl}</span></td>`;
+    tb.appendChild(tr);
+  });
+
+  const sl = document.getElementById('sugList'); sl.innerHTML = '';
+  (data.suggestions || []).forEach(s => {
+    const d = document.createElement('div'); d.className = 'sug-item'; d.textContent = s; sl.appendChild(d);
+  });
+  document.getElementById('optTableWrap').style.display = 'block';
+}
+</script>
+</body>
+</html>

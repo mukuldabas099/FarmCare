@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Crop Disease Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/css/nav.css">
+<style>
+  :root {
+    --green:  #1a7a3c;
+    --green-light: #2ecc71;
+    --amber:  #b05e00;
+    --red:    #c0392b;
+    --navy:   #1a2530;
+    --bg:     #eaf3eb;
+    --border: #d9e6d9;
+    --gray1:  #2a3d4f;
+    --gray2:  #3d5166;
+    --gray3:  #5f7080;
+    --gray4:  #8fa3b3;
+    --r:      18px;
+    --card-shadow: 0 4px 24px rgba(26,122,60,0.10), 0 1.5px 6px rgba(0,0,0,0.05);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eaf3eb;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 75% 55% at 8% 18%, rgba(46,204,113,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 78%, rgba(26,122,60,0.09) 0%, transparent 55%),
+      linear-gradient(150deg, #e8f5ec 0%, #f0f9f2 45%, #e4f0e6 100%);
+    z-index: 0; pointer-events: none;
+  }
+
+  .leaves-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .leaf { position: absolute; opacity: 0.07; animation: floatLeaf linear infinite; will-change: transform; }
+  .leaf:nth-child(1) { left:  4%; top: 15%; font-size: 1.8rem; animation-duration: 20s; animation-delay: 0s; }
+  .leaf:nth-child(2) { left: 20%; top: 70%; font-size: 1.4rem; animation-duration: 24s; animation-delay: -7s; }
+  .leaf:nth-child(3) { left: 45%; top: 25%; font-size: 1.9rem; animation-duration: 22s; animation-delay: -11s; }
+  .leaf:nth-child(4) { left: 70%; top: 12%; font-size: 1.1rem; animation-duration: 27s; animation-delay: -4s; }
+  .leaf:nth-child(5) { left: 82%; top: 65%; font-size: 2.1rem; animation-duration: 19s; animation-delay: -14s; }
+  .leaf:nth-child(6) { left: 93%; top: 85%; font-size: 1.3rem; animation-duration: 23s; animation-delay: -9s; }
+  @keyframes floatLeaf {
+    0%   { transform: translateY(0px) rotate(0deg); }
+    33%  { transform: translateY(-18px) rotate(8deg); }
+    66%  { transform: translateY(-8px) rotate(-5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 24px 52px;
+  }
+
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.22rem; font-weight: 700;
+    color: #1a4028; letter-spacing: -0.01em;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sec-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px; font-weight: 700; color: var(--green);
+    background: rgba(26,122,60,0.1);
+    border: 1px solid rgba(26,122,60,0.25);
+    border-radius: 20px; padding: 2px 9px;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px;
+    box-shadow: var(--card-shadow);
+    position: relative; overflow: hidden;
+  }
+  .panel::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #b05e00, #e07b00, #f4c430, #e07b00, #b05e00);
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* Two-col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  @media(max-width:700px){ .two-col { grid-template-columns: 1fr; } }
+
+  /* Upload box */
+  .upload-hint { font-size: 11.5px; color: var(--gray3); line-height: 1.7; margin-bottom: 14px; }
+
+  .upload-box {
+    border: 2px dashed var(--border);
+    border-radius: 16px; padding: 32px 20px;
+    text-align: center; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative; overflow: hidden;
+    background: #f4f9f5;
+  }
+  .upload-box:hover { border-color: var(--amber); background: #fff8f0; }
+  .upload-box.has-file { border-color: var(--amber); border-style: solid; }
+  .upload-box input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .u-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+  .u-text { font-size: 11px; color: var(--gray3); line-height: 1.7; }
+
+  #imgPrev {
+    width: 110px; height: 110px; object-fit: cover; border-radius: 14px;
+    margin: 10px auto; display: none;
+    border: 2px solid var(--border);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+  }
+
+  .analyse-btn {
+    width: 100%; margin-top: 14px;
+    padding: 13px 0;
+    background: linear-gradient(135deg, #b05e00, #e07b00);
+    border: none; border-radius: 12px;
+    color: #fff; font-weight: 700; font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer; display: none;
+    box-shadow: 0 4px 16px rgba(176,94,0,0.22);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .analyse-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(176,94,0,0.30); }
+  .analyse-btn.show { display: block; }
+
+  /* Severity pills */
+  .sev-none     { background:#e8f5ee; color:#1a7a3c; }
+  .sev-medium   { background:#fff3e0; color:#b05e00; }
+  .sev-high     { background:#fdecea; color:#c0392b; }
+  .sev-critical { background:#2c0000; color:#ff6b6b; font-weight:700; }
+
+  /* Result section */
+  .disease-result { display: none; }
+  .disease-result.show { display: block; }
+
+  /* Disease badge */
+  .disease-badge {
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(176,94,0,0.07), rgba(224,123,0,0.07));
+    border: 1.5px solid rgba(176,94,0,0.18);
+    border-radius: 16px; padding: 14px 18px;
+    margin-bottom: 14px;
+  }
+  .db-emoji { font-size: 2rem; line-height: 1; }
+  .db-info { flex: 1; }
+  .db-crop { font-size: 10.5px; font-weight: 600; color: var(--gray3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 2px; }
+  .db-disease {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; font-weight: 700; color: #7a2600;
+  }
+  .db-disease.healthy { color: #1a7a3c; }
+  .db-conf { font-size: 10px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
+
+  /* Info cards */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  @media(max-width:500px){ .info-grid { grid-template-columns: 1fr; } }
+
+  .info-card {
+    background: #f8faf8; border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .ic-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--gray4); margin-bottom: 5px;
+  }
+  .ic-value { font-size: 12px; color: var(--gray2); line-height: 1.6; }
+
+  /* Solution list */
+  .solution-box {
+    background: linear-gradient(135deg, #f0faf4, #e8f5ee);
+    border: 1.5px solid rgba(26,122,60,0.18);
+    border-radius: 14px; padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .sol-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem; font-weight: 700; color: #1a4028;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .solution-list { list-style: none; padding: 0; }
+  .solution-list li {
+    font-size: 12.5px; color: var(--gray2);
+    padding: 7px 0; border-bottom: 1px solid rgba(26,122,60,0.1);
+    display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
+  }
+  .solution-list li:last-child { border-bottom: none; padding-bottom: 0; }
+  .sol-num {
+    width: 20px; height: 20px; flex-shrink: 0;
+    background: linear-gradient(135deg, #1a7a3c, #2ecc71);
+    color: #fff; border-radius: 50%;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+
+  /* Prevention box */
+  .prevention-box {
+    background: linear-gradient(135deg, #fff8f0, #fff3e0);
+    border: 1.5px solid rgba(176,94,0,0.18);
+    border-radius: 14px; padding: 14px 18px;
+  }
+  .prev-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem; font-weight: 700; color: #7a3c00;
+    margin-bottom: 7px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .prev-text { font-size: 12px; color: var(--gray2); line-height: 1.6; }
+
+  /* Top-5 confidence */
+  .top5-section { margin-top: 14px; }
+  .top5-title { font-size: 10.5px; font-weight: 600; color: var(--gray4); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .conf-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .cbr-label { font-size: 11px; color: var(--gray3); width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+  .cbr-track { flex: 1; height: 6px; background: #e5ede7; border-radius: 3px; overflow: hidden; }
+  .cbr-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #1a7a3c, #2ecc71); transition: width 0.6s ease; }
+  .cbr-fill.top { background: linear-gradient(90deg, #b05e00, #e07b00); }
+  .cbr-pct { font-size: 10.5px; color: var(--gray3); font-weight: 600; width: 38px; text-align: right; flex-shrink: 0; }
+
+  /* Healthy state */
+  .healthy-badge {
+    display: flex; align-items: center; gap: 10px;
+    background: #e8f5ee; border: 1.5px solid rgba(26,122,60,0.2);
+    border-radius: 14px; padding: 14px 18px; margin-bottom: 14px;
+  }
+  .hb-icon { font-size: 1.8rem; }
+  .hb-text { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: #1a7a3c; }
+  .hb-sub  { font-size: 11.5px; color: var(--gray3); margin-top: 2px; }
+
+  /* Loading overlay */
+  .loading-ov {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(4px);
+    border-radius: 20px;
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px; z-index: 10;
+  }
+  .loading-ov.show { display: flex; }
+  .spin {
+    width: 28px; height: 28px;
+    border: 3px solid rgba(176,94,0,0.15);
+    border-top-color: var(--amber);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-ov p { font-size: 12px; color: var(--gray3); font-weight: 500; }
+
+  /* Tips banner */
+  .tips-banner {
+    background: linear-gradient(135deg, rgba(26,122,60,0.06), rgba(46,204,113,0.06));
+    border: 1px solid rgba(26,122,60,0.12);
+    border-radius: 12px; padding: 12px 16px;
+    margin-bottom: 18px;
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 11.5px; color: var(--gray3); line-height: 1.6;
+  }
+  .tips-banner span:first-child { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+  /* Crop chips (supported crops) */
+  .crops-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .crop-chip-sm {
+    background: #fff; border: 1px solid rgba(176,94,0,0.18);
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 11px; font-weight: 500; color: #7a3c00;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+
+  @media(max-width:600px) {
+    .wrap { padding: 16px 14px 40px; }
+    .cbr-label { width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="leaves-bg" aria-hidden="true">
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌿</span>
+  <span class="leaf">🌱</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌿</span>
+  <span class="leaf">🌱</span>
+</div>
+
+<div class="wrap">
+  <div class="sec-title">🔬 Crop Disease Detection <span class="sec-tag">AI Diagnosis</span></div>
+
+  <div class="tips-banner">
+    <span>💡</span>
+    <span id="cd_hint">Upload a clear, well-lit photo of the affected leaf or plant part. The AI will identify the disease and provide treatment solutions. Supported crops: Apple, Blueberry, Cherry, Corn, Grape, Orange, Peach, Pepper, Potato, Raspberry, Soybean, Squash, Strawberry, Tomato.</span>
+  </div>
+
+  <div class="panel">
+    <div class="loading-ov" id="diseaseLoading">
+      <div class="spin"></div>
+      <p id="cd_analysing">Analysing plant image…</p>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Left: upload -->
+      <div>
+        <p class="upload-hint" id="cd_upload_hint">Upload a photo of the affected crop leaf or plant. Ensure good lighting and focus on the affected area for best accuracy.</p>
+        <div class="upload-box" id="uploadBox">
+          <input type="file" id="cropImgInput" accept="image/jpeg,image/jpg,image/png,image/webp"
+                 onchange="handleCropImage(this)">
+          <span class="u-icon">🌿</span>
+          <img id="imgPrev" alt="Preview">
+          <div class="u-text" id="uText">
+            Click or drag to upload a crop photo<br>
+            <small style="color:#8fa3b3;">Supported: JPG, PNG, WEBP · Max 10 MB</small>
+          </div>
+        </div>
+        <button class="analyse-btn" id="analyseBtn" onclick="runAnalysis()">
+          🔬 Detect Disease
+        </button>
+      </div>
+
+      <!-- Right: result -->
+      <div id="diseaseResultBox" class="disease-result">
+
+        <!-- Healthy state -->
+        <div class="healthy-badge" id="healthyBadge" style="display:none;">
+          <span class="hb-icon">✅</span>
+          <div>
+            <div class="hb-text" id="cd_healthy_label">Plant Appears Healthy</div>
+            <div class="hb-sub" id="cd_healthy_sub">No disease detected. Continue regular care.</div>
+          </div>
+        </div>
+
+        <!-- Disease badge -->
+        <div class="disease-badge" id="diseaseBadge" style="display:none;">
+          <span class="db-emoji" id="dbEmoji">🍅</span>
+          <div class="db-info">
+            <div class="db-crop" id="dbCrop">TOMATO</div>
+            <div class="db-disease" id="dbDisease">Late Blight</div>
+          </div>
+          <div>
+            <span class="db-conf sev-high" id="dbConf">87%</span>
+            <div style="margin-top:5px;">
+              <span class="db-conf" id="dbSev" style="margin-top:4px;display:block;text-align:center;">HIGH</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info cards -->
+        <div class="info-grid" id="infoGrid" style="display:none;">
+          <div class="info-card">
+            <div class="ic-label" id="cd_cause_label">Cause</div>
+            <div class="ic-value" id="icCause">—</div>
+          </div>
+          <div class="info-card">
+            <div class="ic-label" id="cd_symptoms_label">Symptoms</div>
+            <div class="ic-value" id="icSymptoms">—</div>
+          </div>
+        </div>
+
+        <!-- Solutions -->
+        <div class="solution-box" id="solutionBox" style="display:none;">
+          <div class="sol-title">💊 <span id="cd_solution_title">Treatment & Solutions</span></div>
+          <ul class="solution-list" id="solutionList"></ul>
+        </div>
+
+        <!-- Prevention -->
+        <div class="prevention-box" id="preventionBox" style="display:none;">
+          <div class="prev-title">🛡️ <span id="cd_prevention_title">Prevention</span></div>
+          <div class="prev-text" id="prevText">—</div>
+        </div>
+
+        <!-- Top-5 confidence bars -->
+        <div class="top5-section" id="top5Section" style="display:none;">
+          <div class="top5-title" id="cd_top5_title">Top Predictions</div>
+          <div id="top5Bars"></div>
+        </div>
+
+      </div><!-- end result -->
+    </div><!-- end two-col -->
+  </div><!-- end panel -->
+</div><!-- end wrap -->
+
+<script>
+/* ── Language strings ─────────────────────────────────── */
+const LANG = {
+  en: {
+    hint: 'Upload a clear, well-lit photo of the affected leaf or plant part. The AI will identify the disease and provide treatment solutions.',
+    upload_hint: 'Upload a photo of the affected crop leaf or plant. Ensure good lighting and focus on the affected area for best accuracy.',
+    analysing: 'Analysing plant image…',
+    supported: 'Supported Crops',
+    healthy_label: 'Plant Appears Healthy',
+    healthy_sub: 'No disease detected. Continue regular care.',
+    cause_label: 'Cause',
+    symptoms_label: 'Symptoms',
+    solution_title: 'Treatment & Solutions',
+    prevention_title: 'Prevention',
+    top5_title: 'Top Predictions',
+    severity_label: 'Severity',
+    detect_btn: '🔬 Detect Disease',
+  },
+  hi: {
+    hint: 'प्रभावित पत्ती या पौधे के भाग की स्पष्ट फोटो अपलोड करें। AI रोग की पहचान करेगा और उपचार के सुझाव देगा।',
+    upload_hint: 'प्रभावित फसल की पत्ती या पौधे की फोटो अपलोड करें। सटीक परिणाम के लिए अच्छी रोशनी में फोटो लें।',
+    analysing: 'पौधे की छवि का विश्लेषण हो रहा है…',
+    supported: 'समर्थित फसलें',
+    healthy_label: 'पौधा स्वस्थ दिखता है',
+    healthy_sub: 'कोई रोग नहीं मिला। नियमित देखभाल जारी रखें।',
+    cause_label: 'कारण',
+    symptoms_label: 'लक्षण',
+    solution_title: 'उपचार व समाधान',
+    prevention_title: 'रोकथाम',
+    top5_title: 'शीर्ष भविष्यवाणियां',
+    severity_label: 'गंभीरता',
+    detect_btn: '🔬 रोग पहचानें',
+  },
+};
+
+let _lang = 'en';
+let _fileObj = null;
+
+function tr(k) {
+  return (LANG[_lang] || LANG.en)[k] || (LANG.en)[k] || k;
+}
+
+function applyLang() {
+  const ids = [
+    ['cd_hint','hint'],['cd_upload_hint','upload_hint'],
+    ['cd_analysing','analysing'],['cd_supported','supported'],
+    ['cd_healthy_label','healthy_label'],['cd_healthy_sub','healthy_sub'],
+    ['cd_cause_label','cause_label'],['cd_symptoms_label','symptoms_label'],
+    ['cd_solution_title','solution_title'],['cd_prevention_title','prevention_title'],
+    ['cd_top5_title','top5_title'],
+  ];
+  ids.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = tr(key);
+  });
+  const btn = document.getElementById('analyseBtn');
+  if (btn) btn.textContent = tr('detect_btn');
+}
+
+window.onLangChange = function(lang) {
+  _lang = lang || 'en';
+  applyLang();
+};
+
+/* ── Base URL ─────────────────────────────────────────── */
+function getBase() {
+  try { return window.parent.FC.getBase(); } catch(e) { return ''; }
+}
+
+/* ── File handling ────────────────────────────────────── */
+function handleCropImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  _fileObj = file;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('imgPrev');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('uText').style.display = 'none';
+    document.getElementById('uploadBox').classList.add('has-file');
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('analyseBtn').classList.add('show');
+  // Reset result
+  document.getElementById('diseaseResultBox').classList.remove('show');
+}
+
+/* ── Analysis ─────────────────────────────────────────── */
+async function runAnalysis() {
+  if (!_fileObj) return;
+  const lo = document.getElementById('diseaseLoading');
+  lo.classList.add('show');
+  document.getElementById('diseaseResultBox').classList.remove('show');
+
+  try {
+    const fd = new FormData();
+    fd.append('crop_image', _fileObj);
+    const res = await fetch(getBase() + '/predict_crop_disease', {
+      method: 'POST', body: fd,
+      signal: AbortSignal.timeout(35000),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+    displayResult(data);
+  } catch(e) {
+    alert('Disease detection error: ' + e.message);
+  } finally {
+    lo.classList.remove('show');
+  }
+}
+
+/* ── Display result ───────────────────────────────────── */
+function displayResult(data) {
+  const isHealthy = data.is_healthy;
+  const box = document.getElementById('diseaseResultBox');
+
+  document.getElementById('healthyBadge').style.display = isHealthy ? 'flex' : 'none';
+  document.getElementById('diseaseBadge').style.display  = isHealthy ? 'none'  : 'flex';
+  document.getElementById('infoGrid').style.display      = isHealthy ? 'none'  : 'grid';
+  document.getElementById('solutionBox').style.display   = 'block';
+  document.getElementById('preventionBox').style.display = 'block';
+  document.getElementById('top5Section').style.display   = 'block';
+
+  if (!isHealthy) {
+    document.getElementById('dbEmoji').textContent   = data.emoji   || '🌿';
+    document.getElementById('dbCrop').textContent    = data.crop    || '—';
+    document.getElementById('dbDisease').textContent = data.disease || '—';
+
+    const conf = document.getElementById('dbConf');
+    conf.textContent = `${data.confidence}%`;
+
+    const sev = (data.severity || 'Unknown').toLowerCase();
+    conf.className = 'db-conf ' + (
+      sev === 'critical' ? 'sev-critical' :
+      sev === 'high'     ? 'sev-high'     :
+      sev === 'medium'   ? 'sev-medium'   : 'sev-none'
+    );
+
+    const sevEl = document.getElementById('dbSev');
+    sevEl.textContent = (data.severity || '').toUpperCase();
+    sevEl.className = 'db-conf ' + (
+      sev === 'critical' ? 'sev-critical' :
+      sev === 'high'     ? 'sev-high'     :
+      sev === 'medium'   ? 'sev-medium'   : 'sev-none'
+    );
+
+    document.getElementById('icCause').textContent    = data.cause    || '—';
+    document.getElementById('icSymptoms').textContent = data.symptoms || '—';
+  }
+
+  // Solutions
+  const ul = document.getElementById('solutionList');
+  ul.innerHTML = '';
+  (data.solution || []).forEach((s, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="sol-num">${i+1}</span><span>${s}</span>`;
+    ul.appendChild(li);
+  });
+
+  // Prevention
+  document.getElementById('prevText').textContent = data.prevention || '—';
+
+  // Top-5 bars
+  const barsEl = document.getElementById('top5Bars');
+  barsEl.innerHTML = '';
+  (data.top5 || []).forEach((item, idx) => {
+    const label = item.label.replace(/_/g, ' ').replace(/___/g, ' — ');
+    const row = document.createElement('div');
+    row.className = 'conf-bar-row';
+    row.innerHTML = `
+      <div class="cbr-label" title="${label}">${label}</div>
+      <div class="cbr-track"><div class="cbr-fill ${idx===0?'top':''}" style="width:${item.confidence}%"></div></div>
+      <div class="cbr-pct">${item.confidence}%</div>`;
+    barsEl.appendChild(row);
+  });
+
+  box.classList.add('show');
+}
+
+/* ── Sensor data passthrough ──────────────────────────── */
+window.onSensorData = function() {};
+
+/* Apply lang on load */
+try {
+  const parentLang = window.parent.FC && window.parent.FC.lang;
+  if (parentLang) { _lang = parentLang; applyLang(); }
+} catch(e) {}
+</script>
+</body>
+</html>

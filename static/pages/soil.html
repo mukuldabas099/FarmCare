@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Soil AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/nav.css">
+<style>
+  :root {
+    --green: #1a7a3c;
+    --green-light: #2ecc71;
+    --navy: #1a2530;
+    --amber: #b05e00;
+    --red: #c0392b;
+    --bg: #eaf3eb;
+    --border: #d9e6d9;
+    --gray1: #2a3d4f;
+    --gray2: #3d5166;
+    --gray3: #5f7080;
+    --gray4: #8fa3b3;
+    --r: 18px;
+    --card-shadow: 0 4px 24px rgba(26,122,60,0.10), 0 1.5px 6px rgba(0,0,0,0.05);
+    --card-hover-shadow: 0 8px 36px rgba(26,122,60,0.16), 0 2px 10px rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eaf3eb;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 75% 55% at 8% 18%, rgba(46,204,113,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 78%, rgba(26,122,60,0.09) 0%, transparent 55%),
+      linear-gradient(150deg, #e8f5ec 0%, #f0f9f2 45%, #e4f0e6 100%);
+    z-index: 0; pointer-events: none;
+  }
+
+  .leaves-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .leaf { position: absolute; opacity: 0.07; animation: floatLeaf linear infinite; will-change: transform; }
+  .leaf:nth-child(1)  { left: 4%;  top: 15%; font-size: 1.8rem; animation-duration: 20s; animation-delay: 0s; }
+  .leaf:nth-child(2)  { left: 20%; top: 70%; font-size: 1.4rem; animation-duration: 24s; animation-delay: -7s; }
+  .leaf:nth-child(3)  { left: 45%; top: 25%; font-size: 1.9rem; animation-duration: 22s; animation-delay: -11s; }
+  .leaf:nth-child(4)  { left: 70%; top: 12%; font-size: 1.1rem; animation-duration: 27s; animation-delay: -4s; }
+  .leaf:nth-child(5)  { left: 82%; top: 65%; font-size: 2.1rem; animation-duration: 19s; animation-delay: -14s; }
+  .leaf:nth-child(6)  { left: 93%; top: 85%; font-size: 1.3rem; animation-duration: 23s; animation-delay: -9s; }
+  @keyframes floatLeaf {
+    0%   { transform: translateY(0px) rotate(0deg); }
+    33%  { transform: translateY(-18px) rotate(8deg); }
+    66%  { transform: translateY(-8px) rotate(-5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 24px 52px;
+  }
+
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: #1a4028;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sec-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--green);
+    background: rgba(26,122,60,0.1);
+    border: 1px solid rgba(26,122,60,0.25);
+    border-radius: 20px;
+    padding: 2px 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #1a7a3c, #2ecc71, #b8e08a);
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* Two-col layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media(max-width:650px){ .two-col { grid-template-columns: 1fr; } }
+
+  /* Upload box */
+  .upload-hint {
+    font-size: 11.5px;
+    color: var(--gray3);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .upload-box {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+    background: #f4f9f5;
+  }
+  .upload-box:hover { border-color: var(--green); background: #edf7f0; }
+  .upload-box.has-file { border-color: var(--green); border-style: solid; }
+  .upload-box input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+  }
+  .u-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+  .u-text { font-size: 11px; color: var(--gray3); line-height: 1.7; }
+  #imgPrev {
+    width: 100px; height: 100px;
+    object-fit: cover; border-radius: 12px;
+    margin: 10px auto; display: none;
+    border: 2px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  /* Result box */
+  .soil-result { display: none; }
+  .soil-result.show { display: block; }
+
+  /* Badge */
+  .soil-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(26,122,60,0.08) 0%, rgba(46,204,113,0.08) 100%);
+    border: 1.5px solid rgba(26,122,60,0.2);
+    border-radius: 14px;
+    padding: 10px 18px;
+    margin-bottom: 14px;
+  }
+  .stb-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a5c2e;
+  }
+  .stb-conf {
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 600;
+    background: rgba(26,122,60,0.1);
+    border-radius: 20px;
+    padding: 2px 8px;
+  }
+  .soil-notes {
+    font-size: 11.5px;
+    color: var(--gray3);
+    margin-bottom: 14px;
+    line-height: 1.6;
+  }
+
+  /* Crops grid */
+  .crops-sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a4028;
+    margin-bottom: 10px;
+  }
+  .crops-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .crop-chip {
+    background: linear-gradient(135deg, #f4f9f5 0%, #edf7f0 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 12px 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .crop-chip::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--green), var(--green-light));
+    border-radius: 14px 14px 0 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .crop-chip:hover, .crop-chip.selected {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(26,122,60,0.14);
+    border-color: rgba(26,122,60,0.3);
+  }
+  .crop-chip:hover::before, .crop-chip.selected::before { opacity: 1; }
+  .cc-name {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--gray1);
+    margin-bottom: 3px;
+  }
+  .cc-season {
+    font-size: 10px;
+    color: var(--gray4);
+    margin-bottom: 5px;
+  }
+  .cc-badge {
+    display: inline-block;
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .b-kharif  { background: #e8f0fb; color: var(--navy); }
+  .b-rabi    { background: #f5ecff; color: #5b3d8a; }
+  .b-annual  { background: #fff4e6; color: var(--amber); }
+
+  /* Loading overlay */
+  .loading-ov {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(4px);
+    border-radius: 20px;
+    display: none;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    z-index: 10;
+  }
+  .loading-ov.show { display: flex; }
+  .spin {
+    width: 28px; height: 28px;
+    border: 3px solid rgba(26,122,60,0.15);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-ov p { font-size: 12px; color: var(--gray3); font-weight: 500; }
+
+  @media (max-width: 800px) { .crops-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) {
+    .wrap { padding: 16px 14px 40px; }
+    .sec-title { font-size: 1.05rem; }
+    .crops-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="leaves-bg" aria-hidden="true">
+  <span class="leaf">🌿</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌱</span>
+  <span class="leaf">🍃</span>
+  <span class="leaf">🌿</span>
+  <span class="leaf">🌱</span>
+</div>
+
+<div class="wrap">
+  <div class="sec-title">🔬 Soil Type Detection <span class="sec-tag">AI Model</span></div>
+  <div class="panel">
+    <div class="loading-ov" id="soilLoading">
+      <div class="spin"></div>
+      <p>Detecting soil type…</p>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <p class="upload-hint">Upload a clear photo of your soil. The AI model will identify the type and recommend suitable crops.</p>
+        <div class="upload-box" id="uploadBox">
+          <input type="file" id="soilImgInput" accept="image/jpeg,image/jpg,image/png" onchange="handleSoilImage(this)">
+          <span class="u-icon">📷</span>
+          <img id="imgPrev">
+          <div class="u-text" id="uText">
+            Click or drag to upload a soil photo<br>
+            <small style="color:#8fa3b3;">Supported: Alluvial · Black · Clay · Red · Yellow</small>
+          </div>
+        </div>
+      </div>
+
+      <div id="soilResultBox" class="soil-result">
+        <div class="soil-type-badge">
+          <span style="font-size:1.5rem;">🌍</span>
+          <span class="stb-label" id="soilTypeName">—</span>
+          <span class="stb-conf"  id="soilConf">—</span>
+        </div>
+        <div class="soil-notes" id="soilNotes"></div>
+        <div class="crops-sec-title">Suitable Crops</div>
+        <div class="crops-grid" id="cropsGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function getBase() {
+  try { return window.parent.FC.getBase(); } catch(e) { return 'http://192.168.182.10:5000'; }
+}
+
+async function handleSoilImage(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('imgPrev');
+    img.src = e.target.result; img.style.display = 'block';
+    document.getElementById('uText').style.display = 'none';
+    document.getElementById('uploadBox').classList.add('has-file');
+  };
+  reader.readAsDataURL(file);
+  const lo = document.getElementById('soilLoading'); lo.classList.add('show');
+  try {
+    const fd = new FormData(); fd.append('soil_image', file);
+    const res = await fetch(getBase()+'/predict_soil_crops',{method:'POST',body:fd,signal:AbortSignal.timeout(30000)});
+    if (!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    displaySoilResult(data);
+    try { window.parent.FC._detectedSoilType = data.soil_type; } catch(e){}
+  } catch(e) {
+    alert('Soil detection error: ' + e.message);
+  } finally {
+    lo.classList.remove('show');
+  }
+}
+
+function displaySoilResult(data) {
+  document.getElementById('soilTypeName').textContent = data.soil_type;
+  document.getElementById('soilConf').textContent     = `${data.confidence}% confidence`;
+  document.getElementById('soilNotes').textContent    = data.notes || '';
+  const g = document.getElementById('cropsGrid'); g.innerHTML = '';
+  (data.crops || []).forEach(c => {
+    const sk = c.season.toLowerCase();
+    const bc = sk.includes('kharif')?'b-kharif':sk.includes('rabi')?'b-rabi':'b-annual';
+    const chip = document.createElement('div'); chip.className = 'crop-chip';
+    chip.innerHTML = `<div class="cc-name">🌾 ${c.crop}${c.note?' ⭐':''}</div>
+      <div class="cc-season">${c.months}</div>
+      <span class="cc-badge ${bc}">${c.season}</span>`;
+    chip.onclick = () => {
+      document.querySelectorAll('.crop-chip').forEach(x => x.classList.remove('selected'));
+      chip.classList.add('selected');
+      const cn = c.crop.split('(')[0].trim();
+      try {
+        window.parent.FC._pendingCrop = cn;
+        window.parent.switchTab('crops');
+      } catch(e) {}
+    };
+    g.appendChild(chip);
+  });
+  document.getElementById('soilResultBox').classList.add('show');
+}
+
+window.onSensorData = function() {};
+window.onLangChange = function() {};
+</script>
+</body>
+</html>
